@@ -9,12 +9,14 @@ public class Account {
 
     private final Long id;
     private final String accountNumber;
+    private final Long version;
     private BigDecimal balance;
 
-    public Account(Long id, String accountNumber, BigDecimal balance) {
+    public Account(Long id, String accountNumber, BigDecimal balance, Long version) {
         this.id = id;
         this.accountNumber = accountNumber;
         this.balance = balance;
+        this.version = version;
     }
 
     public Long getId() {
@@ -27,6 +29,10 @@ public class Account {
 
     public BigDecimal getBalance() {
         return balance;
+    }
+
+    public Long getVersion() {
+        return version;
     }
 
     public void deposit(BigDecimal amount) {
