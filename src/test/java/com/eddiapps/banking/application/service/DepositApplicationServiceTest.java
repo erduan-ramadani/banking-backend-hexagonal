@@ -13,6 +13,9 @@ import com.eddiapps.banking.exception.AccountNotFoundException;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -20,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @ExtendWith(MockitoExtension.class)
 public class DepositApplicationServiceTest {
@@ -29,6 +33,14 @@ public class DepositApplicationServiceTest {
     SaveAccountPort saveAccountPort;
     @InjectMocks
     DepositApplicationService depositApplicationService;
+
+    static Stream<Arguments> invalidAmounts() {
+        return Stream.of(
+                Arguments.of(BigDecimal.valueOf(-50)),
+                Arguments.of(BigDecimal.ZERO),
+                Arguments.of((Object) null)
+        );
+    }
 
     @Test
     void shouldDepositMoneySuccessfully() {
@@ -57,49 +69,19 @@ public class DepositApplicationServiceTest {
         verify(saveAccountPort, never()).save(any(Account.class));
     }
 
-    @Test
-    void shouldThrowExceptionWhenDepositAmountIsNegative() {
+    @ParameterizedTest
+    @MethodSource("invalidAmounts")
+    void shouldRejectInvalidDepositAmounts(BigDecimal amount) {
         Account account = new Account(1L, "1", BigDecimal.valueOf(100), 1L);
 
         when(loadAccountPort.findById(1L)).thenReturn(Optional.of(account));
 
         assertThrows(InvalidAmountException.class,
-                () -> depositApplicationService.deposit(1L, BigDecimal.valueOf(-50))
+                () -> depositApplicationService.deposit(1L, amount)
         );
 
         verify(saveAccountPort, never()).save(any(Account.class));
 
         assertEquals(BigDecimal.valueOf(100), account.getBalance());
     }
-
-    @Test
-    void shouldThrowExceptionWhenDepositAmountIsZero() {
-        Account account = new Account(1L, "1", BigDecimal.valueOf(100), 1L);
-
-        when(loadAccountPort.findById(1L)).thenReturn(Optional.of(account));
-
-        assertThrows(InvalidAmountException.class,
-                () -> depositApplicationService.deposit(1L, BigDecimal.valueOf(0))
-        );
-
-        verify(saveAccountPort, never()).save(any(Account.class));
-
-        assertEquals(BigDecimal.valueOf(100), account.getBalance());
-    }
-
-    @Test
-    void shouldThrowExceptionWhenDepositAmountIsNull() {
-        Account account = new Account(1L, "1", BigDecimal.valueOf(100), 1L);
-
-        when(loadAccountPort.findById(1L)).thenReturn(Optional.of(account));
-
-        assertThrows(InvalidAmountException.class,
-                () -> depositApplicationService.deposit(1L, null)
-        );
-
-        verify(saveAccountPort, never()).save(any(Account.class));
-
-        assertEquals(BigDecimal.valueOf(100), account.getBalance());
-    }
-
 }
