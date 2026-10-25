@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 
 import com.eddiapps.banking.application.port.out.LoadAccountPort;
 import com.eddiapps.banking.application.port.out.SaveAccountPort;
+import com.eddiapps.banking.domain.exception.InvalidAmountException;
 import com.eddiapps.banking.domain.model.Account;
 import com.eddiapps.banking.exception.AccountNotFoundException;
 
@@ -54,6 +55,51 @@ public class DepositApplicationServiceTest {
                 () -> depositApplicationService.deposit(99L, BigDecimal.valueOf(50)));
 
         verify(saveAccountPort, never()).save(any(Account.class));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDepositAmountIsNegative() {
+        Account account = new Account(1L, "1", BigDecimal.valueOf(100), 1L);
+
+        when(loadAccountPort.findById(1L)).thenReturn(Optional.of(account));
+
+        assertThrows(InvalidAmountException.class,
+                () -> depositApplicationService.deposit(1L, BigDecimal.valueOf(-50))
+        );
+
+        verify(saveAccountPort, never()).save(any(Account.class));
+
+        assertEquals(BigDecimal.valueOf(100), account.getBalance());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDepositAmountIsZero() {
+        Account account = new Account(1L, "1", BigDecimal.valueOf(100), 1L);
+
+        when(loadAccountPort.findById(1L)).thenReturn(Optional.of(account));
+
+        assertThrows(InvalidAmountException.class,
+                () -> depositApplicationService.deposit(1L, BigDecimal.valueOf(0))
+        );
+
+        verify(saveAccountPort, never()).save(any(Account.class));
+
+        assertEquals(BigDecimal.valueOf(100), account.getBalance());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDepositAmountIsNull() {
+        Account account = new Account(1L, "1", BigDecimal.valueOf(100), 1L);
+
+        when(loadAccountPort.findById(1L)).thenReturn(Optional.of(account));
+
+        assertThrows(InvalidAmountException.class,
+                () -> depositApplicationService.deposit(1L, null)
+        );
+
+        verify(saveAccountPort, never()).save(any(Account.class));
+
+        assertEquals(BigDecimal.valueOf(100), account.getBalance());
     }
 
 }
