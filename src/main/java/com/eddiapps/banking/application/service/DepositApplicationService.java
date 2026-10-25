@@ -3,6 +3,7 @@ package com.eddiapps.banking.application.service;
 import com.eddiapps.banking.application.port.in.DepositUseCase;
 import com.eddiapps.banking.application.port.out.LoadAccountPort;
 import com.eddiapps.banking.application.port.out.SaveAccountPort;
+import com.eddiapps.banking.application.port.out.SaveTransactionPort;
 import com.eddiapps.banking.domain.model.Account;
 
 import org.springframework.stereotype.Service;
@@ -16,10 +17,16 @@ public class DepositApplicationService implements DepositUseCase {
 
     private final LoadAccountPort loadAccountPort;
     private final SaveAccountPort saveAccountPort;
+    private final SaveTransactionPort saveTransactionPort;
 
-    public DepositApplicationService(LoadAccountPort loadAccountPort, SaveAccountPort saveAccountPort) {
+    public DepositApplicationService(
+            LoadAccountPort loadAccountPort,
+            SaveAccountPort saveAccountPort,
+            SaveTransactionPort saveTransactionPort
+    ) {
         this.loadAccountPort = loadAccountPort;
         this.saveAccountPort = saveAccountPort;
+        this.saveTransactionPort = saveTransactionPort;
     }
 
     @Override
@@ -27,6 +34,8 @@ public class DepositApplicationService implements DepositUseCase {
         Account account = loadAccountPort.findByAccountNumber(accountNumber)
                 .orElseGet(() -> Account.createNew(accountNumber));
         account.deposit(amount);
-        return saveAccountPort.save(account);
+        Account savedAccount = saveAccountPort.save(account);
+        saveTransactionPort.saveDeposit(accountNumber, amount);
+        return savedAccount;
     }
 }
