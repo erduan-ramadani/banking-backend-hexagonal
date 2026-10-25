@@ -20,6 +20,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.OptimisticLockingFailureException;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -84,4 +85,17 @@ public class DepositApplicationServiceTest {
 
         assertEquals(BigDecimal.valueOf(100), account.getBalance());
     }
+
+    @Test
+    void shouldPropagateExceptionWhenSavingFails() {
+        Account account = new Account(1L, "1", BigDecimal.valueOf(100), 1L);
+
+        when(loadAccountPort.findById(1L)).thenReturn(Optional.of(account));
+        when(saveAccountPort.save(account)).thenThrow(new OptimisticLockingFailureException("Version conflict"));
+
+        assertThrows(OptimisticLockingFailureException.class,
+                () -> depositApplicationService.deposit(1L, BigDecimal.valueOf(50))
+        );
+    }
+
 }
