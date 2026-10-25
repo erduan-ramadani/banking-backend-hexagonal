@@ -45,7 +45,6 @@ public class AccountPersistenceAdapter implements LoadAccountPort, SaveAccountPo
             }
         }
 
-
         accountEntity.setBalance(account.getBalance());
         AccountEntity savedAccount = accountRepository.save(accountEntity);
         return toDomain(savedAccount);

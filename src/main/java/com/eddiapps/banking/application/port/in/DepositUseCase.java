@@ -5,5 +5,5 @@ import com.eddiapps.banking.domain.model.Account;
 import java.math.BigDecimal;
 
 public interface DepositUseCase {
-    Account deposit(Long accountId, BigDecimal amount);
+    Account deposit(String idempotencyKey, String accountNumber, BigDecimal amount);
 }
