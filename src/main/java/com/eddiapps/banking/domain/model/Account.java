@@ -1,5 +1,6 @@
 package com.eddiapps.banking.domain.model;
 
+import com.eddiapps.banking.exception.InsufficientFundsException;
 import com.eddiapps.banking.exception.InvalidAmountException;
 
 import java.math.BigDecimal;
@@ -29,10 +30,23 @@ public class Account {
     }
 
     public void deposit(BigDecimal amount) {
+        validateAmount(amount);
+        balance = balance.add(amount);
+    }
+
+    public void withdraw(BigDecimal amount) {
+        validateAmount(amount);
+
+        if (balance.compareTo(amount) < 0) {
+            throw new InsufficientFundsException("Insufficient funds");
+        }
+
+        balance = balance.subtract(amount);
+    }
+
+    private void validateAmount(BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new InvalidAmountException("Amount must be > 0");
         }
-
-        balance = balance.add(amount);
     }
 }
