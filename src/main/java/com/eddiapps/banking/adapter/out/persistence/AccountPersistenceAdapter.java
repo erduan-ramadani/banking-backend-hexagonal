@@ -23,22 +23,12 @@ public class AccountPersistenceAdapter implements LoadAccountPort, SaveAccountPo
 
     @Override
     public Optional<Account> findById(Long id) {
-        return accountRepository.findById(id).map(entity -> new Account(
-                entity.getId(),
-                entity.getAccountNumber(),
-                entity.getBalance(),
-                entity.getVersion()
-        ));
+        return accountRepository.findById(id).map(this::toDomain);
     }
 
     @Override
     public Optional<Account> findByAccountNumber(String accountNumber) {
-        return accountRepository.findByAccountNumber(accountNumber).map(entity -> new Account(
-                entity.getId(),
-                entity.getAccountNumber(),
-                entity.getBalance(),
-                entity.getVersion()
-        ));
+        return accountRepository.findByAccountNumber(accountNumber).map(this::toDomain);
     }
 
     @Override
@@ -58,11 +48,15 @@ public class AccountPersistenceAdapter implements LoadAccountPort, SaveAccountPo
 
         accountEntity.setBalance(account.getBalance());
         AccountEntity savedAccount = accountRepository.save(accountEntity);
+        return toDomain(savedAccount);
+    }
+
+    private Account toDomain(AccountEntity entity) {
         return new Account(
-                savedAccount.getId(),
-                savedAccount.getAccountNumber(),
-                savedAccount.getBalance(),
-                savedAccount.getVersion()
+                entity.getId(),
+                entity.getAccountNumber(),
+                entity.getBalance(),
+                entity.getVersion()
         );
     }
 }
