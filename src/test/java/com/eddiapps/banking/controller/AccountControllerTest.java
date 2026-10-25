@@ -6,9 +6,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.eddiapps.banking.domain.exception.InsufficientFundsException;
 import com.eddiapps.banking.dto.AccountResponse;
 import com.eddiapps.banking.dto.TransactionResponse;
-import com.eddiapps.banking.exception.*;
+import com.eddiapps.banking.exception.AccountNotFoundException;
+import com.eddiapps.banking.exception.IdempotencyConflictException;
+import com.eddiapps.banking.exception.InvalidIdempotencyKeyException;
+import com.eddiapps.banking.exception.InvalidTransferException;
 import com.eddiapps.banking.model.TransactionType;
 import com.eddiapps.banking.service.AccountService;
 

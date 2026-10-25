@@ -1,4 +1,4 @@
-package com.eddiapps.banking.exception;
+package com.eddiapps.banking.domain.exception;
 
 public class InsufficientFundsException extends RuntimeException {
     public InsufficientFundsException(String message) {

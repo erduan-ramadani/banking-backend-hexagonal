@@ -1,5 +1,7 @@
 package com.eddiapps.banking.exception;
 
+import com.eddiapps.banking.domain.exception.InsufficientFundsException;
+import com.eddiapps.banking.domain.exception.InvalidAmountException;
 import com.eddiapps.banking.dto.ErrorResponse;
 
 import org.springframework.http.HttpStatus;

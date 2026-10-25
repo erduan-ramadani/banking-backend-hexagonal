@@ -1,7 +1,7 @@
 package com.eddiapps.banking.domain.model;
 
-import com.eddiapps.banking.exception.InsufficientFundsException;
-import com.eddiapps.banking.exception.InvalidAmountException;
+import com.eddiapps.banking.domain.exception.InsufficientFundsException;
+import com.eddiapps.banking.domain.exception.InvalidAmountException;
 
 import java.math.BigDecimal;
 
