@@ -4,7 +4,6 @@ import com.eddiapps.banking.application.port.in.DepositUseCase;
 import com.eddiapps.banking.application.port.out.LoadAccountPort;
 import com.eddiapps.banking.application.port.out.SaveAccountPort;
 import com.eddiapps.banking.domain.model.Account;
-import com.eddiapps.banking.exception.AccountNotFoundException;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,9 +23,9 @@ public class DepositApplicationService implements DepositUseCase {
     }
 
     @Override
-    public Account deposit(Long accountId, BigDecimal amount) {
-        Account account = loadAccountPort.findById(accountId)
-                .orElseThrow(() -> new AccountNotFoundException("Account not found"));
+    public Account deposit(String idempotencyKey, String accountNumber, BigDecimal amount) {
+        Account account = loadAccountPort.findByAccountNumber(accountNumber)
+                .orElseGet(() -> Account.createNew(accountNumber));
         account.deposit(amount);
         return saveAccountPort.save(account);
     }
