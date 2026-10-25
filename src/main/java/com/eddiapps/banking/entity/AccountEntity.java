@@ -27,6 +27,10 @@ public class AccountEntity {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public String getAccountNumber() {
         return accountNumber;
     }
@@ -41,5 +45,9 @@ public class AccountEntity {
 
     public Long getVersion() {
         return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 }
