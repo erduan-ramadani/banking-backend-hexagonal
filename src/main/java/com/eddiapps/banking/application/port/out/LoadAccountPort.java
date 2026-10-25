@@ -6,4 +6,6 @@ import java.util.Optional;
 
 public interface LoadAccountPort {
     Optional<Account> findById(Long id);
+
+    Optional<Account> findByAccountNumber(String accountNumber);
 }
