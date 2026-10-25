@@ -1,12 +1,14 @@
 package com.eddiapps.banking.application.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 import com.eddiapps.banking.application.port.out.LoadAccountPort;
 import com.eddiapps.banking.application.port.out.SaveAccountPort;
 import com.eddiapps.banking.domain.model.Account;
+import com.eddiapps.banking.exception.AccountNotFoundException;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,6 +44,16 @@ public class DepositApplicationServiceTest {
         verify(saveAccountPort).save(accountCaptor.capture());
         Account capturedAccount = accountCaptor.getValue();
         assertEquals(BigDecimal.valueOf(150), capturedAccount.getBalance());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenAccountNotFound() {
+        when(loadAccountPort.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(AccountNotFoundException.class,
+                () -> depositApplicationService.deposit(99L, BigDecimal.valueOf(50)));
+
+        verify(saveAccountPort, never()).save(any(Account.class));
     }
 
 }
