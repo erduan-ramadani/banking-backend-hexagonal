@@ -43,12 +43,18 @@ public class AccountPersistenceAdapter implements LoadAccountPort, SaveAccountPo
 
     @Override
     public Account save(Account account) {
-        AccountEntity accountEntity = accountRepository.findById(account.getId())
-                .orElseThrow(() -> new AccountNotFoundException("Account not found"));
+        AccountEntity accountEntity;
+        if (account.getId() == null) {
+            accountEntity = new AccountEntity(account.getAccountNumber());
+        } else {
+            accountEntity = accountRepository.findById(account.getId())
+                    .orElseThrow(() -> new AccountNotFoundException("Account not found"));
 
-        if (!Objects.equals(account.getVersion(), accountEntity.getVersion())) {
-            throw new OptimisticLockingFailureException("Version conflict");
+            if (!Objects.equals(account.getVersion(), accountEntity.getVersion())) {
+                throw new OptimisticLockingFailureException("Version conflict");
+            }
         }
+
 
         accountEntity.setBalance(account.getBalance());
         AccountEntity savedAccount = accountRepository.save(accountEntity);
