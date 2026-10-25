@@ -19,6 +19,10 @@ public class Account {
         this.version = version;
     }
 
+    public static Account createNew(String accountNumber) {
+        return new Account(null, accountNumber, BigDecimal.ZERO, null);
+    }
+
     public Long getId() {
         return id;
     }
