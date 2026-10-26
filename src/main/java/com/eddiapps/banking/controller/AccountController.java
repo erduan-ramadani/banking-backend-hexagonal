@@ -1,6 +1,7 @@
 package com.eddiapps.banking.controller;
 
 import com.eddiapps.banking.application.port.in.DepositUseCase;
+import com.eddiapps.banking.application.port.in.GetBalanceUseCase;
 import com.eddiapps.banking.application.port.in.TransferUseCase;
 import com.eddiapps.banking.application.port.in.WithdrawUseCase;
 import com.eddiapps.banking.domain.model.Account;
@@ -29,17 +30,20 @@ public class AccountController {
     private final DepositUseCase depositUseCase;
     private final WithdrawUseCase withdrawUseCase;
     private final TransferUseCase transferUseCase;
+    private final GetBalanceUseCase getBalanceUseCase;
 
     public AccountController(
             AccountService accountService,
             DepositUseCase depositUseCase,
             WithdrawUseCase withdrawUseCase,
-            TransferUseCase transferUseCase
+            TransferUseCase transferUseCase,
+            GetBalanceUseCase getBalanceUseCase
     ) {
         this.accountService = accountService;
         this.depositUseCase = depositUseCase;
         this.withdrawUseCase = withdrawUseCase;
         this.transferUseCase = transferUseCase;
+        this.getBalanceUseCase = getBalanceUseCase;
     }
 
     @PostMapping("/{accountNumber}/deposit")
@@ -66,7 +70,8 @@ public class AccountController {
     AccountResponse getBalance(
             @PathVariable String accountNumber
     ) {
-        return accountService.getBalance(accountNumber);
+        Account account = getBalanceUseCase.getBalance(accountNumber);
+        return new AccountResponse(account.getAccountNumber(), account.getBalance());
     }
 
     @PostMapping("/transfer")
