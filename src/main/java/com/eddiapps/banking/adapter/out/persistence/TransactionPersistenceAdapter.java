@@ -4,7 +4,7 @@ import com.eddiapps.banking.application.port.out.LoadTransactionPort;
 import com.eddiapps.banking.application.port.out.SaveTransactionPort;
 import com.eddiapps.banking.domain.model.Transaction;
 import com.eddiapps.banking.entity.TransactionEntity;
-import com.eddiapps.banking.model.TransactionType;
+import com.eddiapps.banking.domain.model.TransactionType;
 import com.eddiapps.banking.repository.TransactionRepository;
 
 import org.springframework.stereotype.Repository;

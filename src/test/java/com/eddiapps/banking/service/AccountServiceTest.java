@@ -1,20 +1,29 @@
 package com.eddiapps.banking.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import com.eddiapps.banking.adapter.in.web.dto.AccountResponse;
+import com.eddiapps.banking.adapter.in.web.dto.TransactionResponse;
+import com.eddiapps.banking.application.exception.IdempotencyConflictException;
+import com.eddiapps.banking.application.exception.InvalidIdempotencyKeyException;
+import com.eddiapps.banking.domain.exception.AccountNotFoundException;
 import com.eddiapps.banking.domain.exception.InsufficientFundsException;
 import com.eddiapps.banking.domain.exception.InvalidAmountException;
-import com.eddiapps.banking.dto.AccountResponse;
-import com.eddiapps.banking.dto.TransactionResponse;
+import com.eddiapps.banking.domain.exception.InvalidTransferException;
+import com.eddiapps.banking.domain.model.TransactionType;
 import com.eddiapps.banking.entity.AccountEntity;
 import com.eddiapps.banking.entity.IdempotencyRecordEntity;
 import com.eddiapps.banking.entity.TransactionEntity;
-import com.eddiapps.banking.exception.AccountNotFoundException;
-import com.eddiapps.banking.exception.IdempotencyConflictException;
-import com.eddiapps.banking.exception.InvalidIdempotencyKeyException;
-import com.eddiapps.banking.exception.InvalidTransferException;
-import com.eddiapps.banking.model.TransactionType;
 import com.eddiapps.banking.repository.AccountRepository;
 import com.eddiapps.banking.repository.IdempotencyRecordRepository;
 import com.eddiapps.banking.repository.TransactionRepository;

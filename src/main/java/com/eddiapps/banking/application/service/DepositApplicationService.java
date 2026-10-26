@@ -1,5 +1,7 @@
 package com.eddiapps.banking.application.service;
 
+import com.eddiapps.banking.application.exception.IdempotencyConflictException;
+import com.eddiapps.banking.application.exception.InvalidIdempotencyKeyException;
 import com.eddiapps.banking.application.port.in.DepositUseCase;
 import com.eddiapps.banking.application.port.out.LoadAccountPort;
 import com.eddiapps.banking.application.port.out.LoadIdempotencyPort;
@@ -9,9 +11,7 @@ import com.eddiapps.banking.application.port.out.SaveTransactionPort;
 import com.eddiapps.banking.domain.exception.InvalidAmountException;
 import com.eddiapps.banking.domain.model.Account;
 import com.eddiapps.banking.domain.model.IdempotencyRecord;
-import com.eddiapps.banking.exception.IdempotencyConflictException;
-import com.eddiapps.banking.exception.InvalidIdempotencyKeyException;
-import com.eddiapps.banking.model.TransactionType;
+import com.eddiapps.banking.domain.model.TransactionType;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

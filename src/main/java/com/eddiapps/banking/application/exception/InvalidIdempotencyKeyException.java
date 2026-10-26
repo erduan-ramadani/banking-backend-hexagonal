@@ -1,4 +1,4 @@
-package com.eddiapps.banking.exception;
+package com.eddiapps.banking.application.exception;
 
 public class InvalidIdempotencyKeyException extends RuntimeException {
     public InvalidIdempotencyKeyException(String message) {

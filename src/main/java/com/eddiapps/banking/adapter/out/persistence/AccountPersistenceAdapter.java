@@ -4,7 +4,7 @@ import com.eddiapps.banking.application.port.out.LoadAccountPort;
 import com.eddiapps.banking.application.port.out.SaveAccountPort;
 import com.eddiapps.banking.domain.model.Account;
 import com.eddiapps.banking.entity.AccountEntity;
-import com.eddiapps.banking.exception.AccountNotFoundException;
+import com.eddiapps.banking.domain.exception.AccountNotFoundException;
 import com.eddiapps.banking.repository.AccountRepository;
 
 import org.springframework.dao.OptimisticLockingFailureException;

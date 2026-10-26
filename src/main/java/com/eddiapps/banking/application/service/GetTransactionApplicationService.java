@@ -4,7 +4,7 @@ import com.eddiapps.banking.application.port.in.GetTransactionHistoryUseCase;
 import com.eddiapps.banking.application.port.out.LoadAccountPort;
 import com.eddiapps.banking.application.port.out.LoadTransactionPort;
 import com.eddiapps.banking.domain.model.Transaction;
-import com.eddiapps.banking.exception.AccountNotFoundException;
+import com.eddiapps.banking.domain.exception.AccountNotFoundException;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

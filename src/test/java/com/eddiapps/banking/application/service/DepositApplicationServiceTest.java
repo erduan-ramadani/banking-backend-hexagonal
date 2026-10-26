@@ -9,7 +9,7 @@ import com.eddiapps.banking.application.port.out.LoadAccountPort;
 import com.eddiapps.banking.application.port.out.SaveAccountPort;
 import com.eddiapps.banking.domain.exception.InvalidAmountException;
 import com.eddiapps.banking.domain.model.Account;
-import com.eddiapps.banking.exception.AccountNotFoundException;
+import com.eddiapps.banking.domain.exception.AccountNotFoundException;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

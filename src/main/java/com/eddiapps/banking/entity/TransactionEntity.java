@@ -1,6 +1,6 @@
 package com.eddiapps.banking.entity;
 
-import com.eddiapps.banking.model.TransactionType;
+import com.eddiapps.banking.domain.model.TransactionType;
 
 import java.math.BigDecimal;
 import java.time.Instant;

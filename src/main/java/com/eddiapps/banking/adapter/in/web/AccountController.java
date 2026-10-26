@@ -1,5 +1,9 @@
-package com.eddiapps.banking.controller;
+package com.eddiapps.banking.adapter.in.web;
 
+import com.eddiapps.banking.adapter.in.web.dto.AccountResponse;
+import com.eddiapps.banking.adapter.in.web.dto.AmountRequest;
+import com.eddiapps.banking.adapter.in.web.dto.TransactionResponse;
+import com.eddiapps.banking.adapter.in.web.dto.TransferRequest;
 import com.eddiapps.banking.application.port.in.DepositUseCase;
 import com.eddiapps.banking.application.port.in.GetBalanceUseCase;
 import com.eddiapps.banking.application.port.in.GetTransactionHistoryUseCase;
@@ -7,10 +11,6 @@ import com.eddiapps.banking.application.port.in.TransferUseCase;
 import com.eddiapps.banking.application.port.in.WithdrawUseCase;
 import com.eddiapps.banking.domain.model.Account;
 import com.eddiapps.banking.domain.model.Transaction;
-import com.eddiapps.banking.dto.AccountResponse;
-import com.eddiapps.banking.dto.AmountRequest;
-import com.eddiapps.banking.dto.TransactionResponse;
-import com.eddiapps.banking.dto.TransferRequest;
 import com.eddiapps.banking.service.AccountService;
 
 import org.springframework.web.bind.annotation.GetMapping;

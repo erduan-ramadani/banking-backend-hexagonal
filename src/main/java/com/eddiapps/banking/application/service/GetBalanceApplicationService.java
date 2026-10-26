@@ -3,7 +3,7 @@ package com.eddiapps.banking.application.service;
 import com.eddiapps.banking.application.port.in.GetBalanceUseCase;
 import com.eddiapps.banking.application.port.out.LoadAccountPort;
 import com.eddiapps.banking.domain.model.Account;
-import com.eddiapps.banking.exception.AccountNotFoundException;
+import com.eddiapps.banking.domain.exception.AccountNotFoundException;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

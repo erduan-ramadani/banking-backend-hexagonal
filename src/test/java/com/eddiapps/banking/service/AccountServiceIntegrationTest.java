@@ -1,10 +1,12 @@
 package com.eddiapps.banking.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.eddiapps.banking.application.exception.IdempotencyConflictException;
 import com.eddiapps.banking.entity.AccountEntity;
 import com.eddiapps.banking.entity.IdempotencyRecordEntity;
-import com.eddiapps.banking.exception.IdempotencyConflictException;
 import com.eddiapps.banking.repository.AccountRepository;
 import com.eddiapps.banking.repository.IdempotencyRecordRepository;
 

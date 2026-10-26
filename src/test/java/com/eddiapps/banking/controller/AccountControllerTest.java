@@ -1,19 +1,24 @@
 package com.eddiapps.banking.controller;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.eddiapps.banking.adapter.in.web.AccountController;
+import com.eddiapps.banking.adapter.in.web.dto.AccountResponse;
+import com.eddiapps.banking.adapter.in.web.dto.TransactionResponse;
+import com.eddiapps.banking.application.exception.IdempotencyConflictException;
+import com.eddiapps.banking.application.exception.InvalidIdempotencyKeyException;
+import com.eddiapps.banking.domain.exception.AccountNotFoundException;
 import com.eddiapps.banking.domain.exception.InsufficientFundsException;
-import com.eddiapps.banking.dto.AccountResponse;
-import com.eddiapps.banking.dto.TransactionResponse;
-import com.eddiapps.banking.exception.AccountNotFoundException;
-import com.eddiapps.banking.exception.IdempotencyConflictException;
-import com.eddiapps.banking.exception.InvalidIdempotencyKeyException;
-import com.eddiapps.banking.exception.InvalidTransferException;
-import com.eddiapps.banking.model.TransactionType;
+import com.eddiapps.banking.domain.exception.InvalidTransferException;
+import com.eddiapps.banking.domain.model.TransactionType;
 import com.eddiapps.banking.service.AccountService;
 
 import org.junit.jupiter.api.Test;

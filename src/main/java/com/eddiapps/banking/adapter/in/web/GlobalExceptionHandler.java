@@ -1,8 +1,12 @@
-package com.eddiapps.banking.exception;
+package com.eddiapps.banking.adapter.in.web;
 
+import com.eddiapps.banking.adapter.in.web.dto.ErrorResponse;
+import com.eddiapps.banking.application.exception.IdempotencyConflictException;
+import com.eddiapps.banking.application.exception.InvalidIdempotencyKeyException;
+import com.eddiapps.banking.domain.exception.AccountNotFoundException;
 import com.eddiapps.banking.domain.exception.InsufficientFundsException;
 import com.eddiapps.banking.domain.exception.InvalidAmountException;
-import com.eddiapps.banking.dto.ErrorResponse;
+import com.eddiapps.banking.domain.exception.InvalidTransferException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;

@@ -1,4 +1,4 @@
-package com.eddiapps.banking.dto;
+package com.eddiapps.banking.adapter.in.web.dto;
 
 import java.math.BigDecimal;
 
