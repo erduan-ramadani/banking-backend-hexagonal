@@ -21,13 +21,6 @@ public class IdempotencyPersistenceAdapter implements LoadIdempotencyPort, SaveI
     }
 
     @Override
-    public Optional<String> findRequestFingerprint(String idempotencyKey) {
-        return idempotencyRecordRepository
-                .findByIdempotencyKey(idempotencyKey)
-                .map(IdempotencyRecordEntity::getRequestFingerprint);
-    }
-
-    @Override
     public void save(String idempotencyKey, String requestFingerprint, Account account) {
         IdempotencyRecordEntity idempotencyRecordEntity = new IdempotencyRecordEntity(
                 idempotencyKey,
