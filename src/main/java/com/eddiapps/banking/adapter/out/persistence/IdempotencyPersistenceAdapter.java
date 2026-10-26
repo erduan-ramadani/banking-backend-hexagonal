@@ -8,6 +8,7 @@ import com.eddiapps.banking.repository.IdempotencyRecordRepository;
 
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.Optional;
 
 @Repository
@@ -28,6 +29,13 @@ public class IdempotencyPersistenceAdapter implements LoadIdempotencyPort, SaveI
 
     @Override
     public void save(String idempotencyKey, String requestFingerprint, Account account) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        IdempotencyRecord idempotencyRecord = new IdempotencyRecord(
+                idempotencyKey,
+                requestFingerprint,
+                account.getAccountNumber(),
+                account.getBalance(),
+                Instant.now()
+        );
+        idempotencyRecordRepository.save(idempotencyRecord);
     }
 }
