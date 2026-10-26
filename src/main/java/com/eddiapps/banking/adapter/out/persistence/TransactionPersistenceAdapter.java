@@ -3,8 +3,8 @@ package com.eddiapps.banking.adapter.out.persistence;
 import com.eddiapps.banking.application.port.out.LoadTransactionPort;
 import com.eddiapps.banking.application.port.out.SaveTransactionPort;
 import com.eddiapps.banking.domain.model.Transaction;
-import com.eddiapps.banking.entity.TransactionEntity;
 import com.eddiapps.banking.domain.model.TransactionType;
+import com.eddiapps.banking.entity.TransactionEntity;
 import com.eddiapps.banking.repository.TransactionRepository;
 
 import org.springframework.stereotype.Repository;
@@ -31,8 +31,8 @@ public class TransactionPersistenceAdapter implements SaveTransactionPort, LoadT
     }
 
     @Override
-    public void saveTransfer(String accountNumber, BigDecimal amount, TransactionType type) {
-        transactionRepository.save(new TransactionEntity(accountNumber, type, amount));
+    public void saveTransfer(String accountNumber, String senderAccountNumber, String recipientAccountNumber, BigDecimal amount, TransactionType type) {
+        transactionRepository.save(new TransactionEntity(accountNumber, senderAccountNumber, recipientAccountNumber, type, amount));
     }
 
     @Override

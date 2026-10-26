@@ -76,8 +76,8 @@ public class TransferApplicationService implements TransferUseCase {
         Account savedSenderAccount = saveAccountPort.save(sender);
         saveAccountPort.save(recipient);
 
-        saveTransactionPort.saveTransfer(senderAccountNumber, amount, TransactionType.TRANSFER_OUTGOING);
-        saveTransactionPort.saveTransfer(recipientAccountNumber, amount, TransactionType.TRANSFER_INCOMING);
+        saveTransactionPort.saveTransfer(senderAccountNumber, senderAccountNumber, recipientAccountNumber, amount, TransactionType.TRANSFER_OUTGOING);
+        saveTransactionPort.saveTransfer(recipientAccountNumber, senderAccountNumber, recipientAccountNumber, amount, TransactionType.TRANSFER_INCOMING);
 
         saveIdempotencyPort.save(idempotencyKey, requestFingerprint, savedSenderAccount);
 

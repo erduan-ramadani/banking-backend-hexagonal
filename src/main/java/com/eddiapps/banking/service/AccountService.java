@@ -135,19 +135,19 @@ public class AccountService {
 
         transactionRepository.save(new TransactionEntity(
                         senderAccountNumber,
-                        TransactionType.TRANSFER,
-                        amount,
                         senderAccountNumber,
-                        recipientAccountNumber
+                        recipientAccountNumber,
+                        TransactionType.TRANSFER,
+                        amount
                 )
         );
 
         transactionRepository.save(new TransactionEntity(
                         recipientAccountNumber,
-                        TransactionType.TRANSFER,
-                        amount,
                         senderAccountNumber,
-                        recipientAccountNumber
+                        recipientAccountNumber,
+                        TransactionType.TRANSFER,
+                        amount
                 )
         );
 

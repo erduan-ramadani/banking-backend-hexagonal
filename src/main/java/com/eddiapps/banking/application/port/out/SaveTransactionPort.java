@@ -9,5 +9,5 @@ public interface SaveTransactionPort {
 
     void saveWithdrawal(String accountNumber, BigDecimal amount);
 
-    void saveTransfer(String accountNumber, BigDecimal amount, TransactionType type);
+    void saveTransfer(String accountNumber, String senderAccountNumber, String recipientAccountNumber, BigDecimal amount, TransactionType type);
 }

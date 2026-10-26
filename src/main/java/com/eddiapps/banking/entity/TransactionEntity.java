@@ -41,13 +41,19 @@ public class TransactionEntity {
         this.timestamp = Instant.now();
     }
 
-    public TransactionEntity(String accountNumber, TransactionType type, BigDecimal amount, String senderAccountNumber, String recipientAccountNumber) {
+    public TransactionEntity(
+            String accountNumber,
+            String senderAccountNumber,
+            String recipientAccountNumber,
+            TransactionType type,
+            BigDecimal amount
+    ) {
         this.accountNumber = accountNumber;
+        this.senderAccountNumber = senderAccountNumber;
+        this.recipientAccountNumber = recipientAccountNumber;
         this.type = type;
         this.amount = amount;
         this.timestamp = Instant.now();
-        this.senderAccountNumber = senderAccountNumber;
-        this.recipientAccountNumber = recipientAccountNumber;
     }
 
     public String getAccountNumber() {

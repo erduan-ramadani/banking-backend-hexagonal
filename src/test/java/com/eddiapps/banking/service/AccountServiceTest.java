@@ -331,25 +331,21 @@ public class AccountServiceTest {
         TransactionEntity entity1 = new TransactionEntity(
                 "1",
                 TransactionType.DEPOSIT,
-                BigDecimal.valueOf(100),
-                null,
-                null
+                BigDecimal.valueOf(100)
         );
 
         TransactionEntity entity2 = new TransactionEntity(
                 "1",
                 TransactionType.WITHDRAWAL,
-                BigDecimal.valueOf(40),
-                null,
-                null
+                BigDecimal.valueOf(40)
         );
 
         TransactionEntity entity3 = new TransactionEntity(
                 "1",
-                TransactionType.TRANSFER,
-                BigDecimal.valueOf(60),
                 "1",
-                "2"
+                "2",
+                TransactionType.TRANSFER,
+                BigDecimal.valueOf(60)
         );
 
         when(accountRepository.findByAccountNumber("1")).thenReturn(Optional.of(account));
