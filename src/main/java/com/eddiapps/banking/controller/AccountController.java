@@ -2,9 +2,11 @@ package com.eddiapps.banking.controller;
 
 import com.eddiapps.banking.application.port.in.DepositUseCase;
 import com.eddiapps.banking.application.port.in.GetBalanceUseCase;
+import com.eddiapps.banking.application.port.in.GetTransactionHistoryUseCase;
 import com.eddiapps.banking.application.port.in.TransferUseCase;
 import com.eddiapps.banking.application.port.in.WithdrawUseCase;
 import com.eddiapps.banking.domain.model.Account;
+import com.eddiapps.banking.domain.model.Transaction;
 import com.eddiapps.banking.dto.AccountResponse;
 import com.eddiapps.banking.dto.AmountRequest;
 import com.eddiapps.banking.dto.TransactionResponse;
@@ -26,24 +28,25 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/accounts")
 public class AccountController {
-    private final AccountService accountService;
     private final DepositUseCase depositUseCase;
     private final WithdrawUseCase withdrawUseCase;
     private final TransferUseCase transferUseCase;
     private final GetBalanceUseCase getBalanceUseCase;
+    private final GetTransactionHistoryUseCase getTransactionHistoryUseCase;
 
     public AccountController(
             AccountService accountService,
             DepositUseCase depositUseCase,
             WithdrawUseCase withdrawUseCase,
             TransferUseCase transferUseCase,
-            GetBalanceUseCase getBalanceUseCase
+            GetBalanceUseCase getBalanceUseCase,
+            GetTransactionHistoryUseCase getTransactionHistoryUseCase
     ) {
-        this.accountService = accountService;
         this.depositUseCase = depositUseCase;
         this.withdrawUseCase = withdrawUseCase;
         this.transferUseCase = transferUseCase;
         this.getBalanceUseCase = getBalanceUseCase;
+        this.getTransactionHistoryUseCase = getTransactionHistoryUseCase;
     }
 
     @PostMapping("/{accountNumber}/deposit")
@@ -88,6 +91,13 @@ public class AccountController {
 
     @GetMapping("/{accountNumber}/history")
     List<TransactionResponse> getHistory(@PathVariable String accountNumber) {
-        return accountService.getTransactionHistory(accountNumber);
+        List<Transaction> transactionHistory = getTransactionHistoryUseCase.getTransactionHistory(accountNumber);
+        return transactionHistory.stream().map(transaction -> new TransactionResponse(
+                transaction.getType(),
+                transaction.getAmount(),
+                transaction.getTimestamp(),
+                transaction.getSenderAccountNumber(),
+                transaction.getRecipientAccountNumber()
+        )).toList();
     }
 }

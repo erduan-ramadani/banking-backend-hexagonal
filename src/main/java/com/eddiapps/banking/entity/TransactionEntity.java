@@ -5,7 +5,13 @@ import com.eddiapps.banking.model.TransactionType;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
 @Entity
 public class TransactionEntity {
@@ -42,6 +48,10 @@ public class TransactionEntity {
         this.timestamp = Instant.now();
         this.senderAccountNumber = senderAccountNumber;
         this.recipientAccountNumber = recipientAccountNumber;
+    }
+
+    public String getAccountNumber() {
+        return accountNumber;
     }
 
     public TransactionType getType() {
