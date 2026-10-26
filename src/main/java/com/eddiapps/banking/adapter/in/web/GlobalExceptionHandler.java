@@ -8,6 +8,7 @@ import com.eddiapps.banking.domain.exception.InsufficientFundsException;
 import com.eddiapps.banking.domain.exception.InvalidAmountException;
 import com.eddiapps.banking.domain.exception.InvalidTransferException;
 
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -90,6 +91,16 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 exception.getMessage(),
+                Instant.now()
+        );
+    }
+
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleOptimisticLockingFailure(OptimisticLockingFailureException exception) {
+        return new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                "Account was modified concurrently",
                 Instant.now()
         );
     }
