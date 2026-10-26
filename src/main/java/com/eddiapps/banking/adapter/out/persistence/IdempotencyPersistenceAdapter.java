@@ -3,7 +3,7 @@ package com.eddiapps.banking.adapter.out.persistence;
 import com.eddiapps.banking.application.port.out.LoadIdempotencyPort;
 import com.eddiapps.banking.application.port.out.SaveIdempotencyPort;
 import com.eddiapps.banking.domain.model.Account;
-import com.eddiapps.banking.entity.IdempotencyRecord;
+import com.eddiapps.banking.entity.IdempotencyRecordEntity;
 import com.eddiapps.banking.repository.IdempotencyRecordRepository;
 
 import org.springframework.stereotype.Repository;
@@ -24,18 +24,18 @@ public class IdempotencyPersistenceAdapter implements LoadIdempotencyPort, SaveI
     public Optional<String> findRequestFingerprint(String idempotencyKey) {
         return idempotencyRecordRepository
                 .findByIdempotencyKey(idempotencyKey)
-                .map(IdempotencyRecord::getRequestFingerprint);
+                .map(IdempotencyRecordEntity::getRequestFingerprint);
     }
 
     @Override
     public void save(String idempotencyKey, String requestFingerprint, Account account) {
-        IdempotencyRecord idempotencyRecord = new IdempotencyRecord(
+        IdempotencyRecordEntity idempotencyRecordEntity = new IdempotencyRecordEntity(
                 idempotencyKey,
                 requestFingerprint,
                 account.getAccountNumber(),
                 account.getBalance(),
                 Instant.now()
         );
-        idempotencyRecordRepository.save(idempotencyRecord);
+        idempotencyRecordRepository.save(idempotencyRecordEntity);
     }
 }

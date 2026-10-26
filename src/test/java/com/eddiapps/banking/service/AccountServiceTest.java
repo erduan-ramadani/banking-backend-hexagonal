@@ -8,7 +8,7 @@ import com.eddiapps.banking.domain.exception.InvalidAmountException;
 import com.eddiapps.banking.dto.AccountResponse;
 import com.eddiapps.banking.dto.TransactionResponse;
 import com.eddiapps.banking.entity.AccountEntity;
-import com.eddiapps.banking.entity.IdempotencyRecord;
+import com.eddiapps.banking.entity.IdempotencyRecordEntity;
 import com.eddiapps.banking.entity.TransactionEntity;
 import com.eddiapps.banking.exception.AccountNotFoundException;
 import com.eddiapps.banking.exception.IdempotencyConflictException;
@@ -507,7 +507,7 @@ public class AccountServiceTest {
     void withdraw_withExistingIdempotencyKey_returnsStoredResponse() {
         String idempotencyKey = "withdraw-key-123";
         String requestFingerprint = "WITHDRAWAL" + " | " + "1" + " | " + BigDecimal.valueOf(40);
-        IdempotencyRecord record = new IdempotencyRecord(
+        IdempotencyRecordEntity record = new IdempotencyRecordEntity(
                 idempotencyKey,
                 requestFingerprint,
                 "1",
@@ -531,7 +531,7 @@ public class AccountServiceTest {
     void withdraw_withReusedIdempotencyKeyForDifferentRequest_throwsConflict() {
         String idempotencyKey = "withdraw-key-123";
         String requestFingerprint = "WITHDRAWAL" + " | " + "1" + " | " + BigDecimal.valueOf(40);
-        IdempotencyRecord record = new IdempotencyRecord(
+        IdempotencyRecordEntity record = new IdempotencyRecordEntity(
                 idempotencyKey,
                 requestFingerprint,
                 "1",
@@ -561,10 +561,10 @@ public class AccountServiceTest {
                 .thenReturn(Optional.empty());
 
         AccountResponse response = accountService.withdraw(idempotencyKey, "1", BigDecimal.valueOf(40));
-        ArgumentCaptor<IdempotencyRecord> captor = ArgumentCaptor.forClass(IdempotencyRecord.class);
+        ArgumentCaptor<IdempotencyRecordEntity> captor = ArgumentCaptor.forClass(IdempotencyRecordEntity.class);
 
         verify(idempotencyRecordRepository).save(captor.capture());
-        IdempotencyRecord savedRecord = captor.getValue();
+        IdempotencyRecordEntity savedRecord = captor.getValue();
 
         assertEquals(response.accountNumber(), savedRecord.getAccountNumber());
         assertEquals(0, BigDecimal.valueOf(60).compareTo(savedRecord.getBalance()));
@@ -594,7 +594,7 @@ public class AccountServiceTest {
     void deposit_withExistingIdempotencyKey_returnsStoredResponse() {
         String idempotencyKey = "deposit-key-123";
         String fingerprint = "DEPOSIT" + " | " + "1" + " | " + "100";
-        IdempotencyRecord record = new IdempotencyRecord(
+        IdempotencyRecordEntity record = new IdempotencyRecordEntity(
                 idempotencyKey,
                 fingerprint,
                 "1",
@@ -624,7 +624,7 @@ public class AccountServiceTest {
     void deposit_withReusedIdempotencyKeyForDifferentRequest_throwsConflict() {
         String idempotencyKey = "deposit-key-123";
         String fingerprint = "DEPOSIT" + " | " + "1" + " | " + "100";
-        IdempotencyRecord record = new IdempotencyRecord(
+        IdempotencyRecordEntity record = new IdempotencyRecordEntity(
                 idempotencyKey,
                 fingerprint,
                 "1",
@@ -655,11 +655,11 @@ public class AccountServiceTest {
 
         AccountResponse response = accountService.deposit(idempotencyKey, "1", BigDecimal.valueOf(100));
 
-        ArgumentCaptor<IdempotencyRecord> captor = ArgumentCaptor.forClass(IdempotencyRecord.class);
+        ArgumentCaptor<IdempotencyRecordEntity> captor = ArgumentCaptor.forClass(IdempotencyRecordEntity.class);
 
         verify(idempotencyRecordRepository).save(captor.capture());
 
-        IdempotencyRecord savedRecord = captor.getValue();
+        IdempotencyRecordEntity savedRecord = captor.getValue();
         assertEquals(response.accountNumber(), savedRecord.getAccountNumber());
         assertEquals(response.balance(), savedRecord.getBalance());
         assertEquals(idempotencyKey, savedRecord.getIdempotencyKey());
@@ -677,7 +677,7 @@ public class AccountServiceTest {
                 + "1" + " | "
                 + "2" + " | "
                 + amount;
-        IdempotencyRecord existingRecord = new IdempotencyRecord(
+        IdempotencyRecordEntity existingRecord = new IdempotencyRecordEntity(
                 idempotencyKey,
                 requestFingerprint,
                 "1",
@@ -700,7 +700,7 @@ public class AccountServiceTest {
 
         verify(accountRepository, never()).findByAccountNumber(anyString());
         verify(transactionRepository, never()).save(any(TransactionEntity.class));
-        verify(idempotencyRecordRepository, never()).save(any(IdempotencyRecord.class));
+        verify(idempotencyRecordRepository, never()).save(any(IdempotencyRecordEntity.class));
     }
 
     @Test
@@ -710,7 +710,7 @@ public class AccountServiceTest {
                 + "1" + " | "
                 + "2" + " | "
                 + BigDecimal.valueOf(40);
-        IdempotencyRecord existingRecord = new IdempotencyRecord(
+        IdempotencyRecordEntity existingRecord = new IdempotencyRecordEntity(
                 idempotencyKey,
                 requestFingerprint,
                 "1",
@@ -731,7 +731,7 @@ public class AccountServiceTest {
         );
         verify(accountRepository, never()).findByAccountNumber(anyString());
         verify(transactionRepository, never()).save(any(TransactionEntity.class));
-        verify(idempotencyRecordRepository, never()).save(any(IdempotencyRecord.class));
+        verify(idempotencyRecordRepository, never()).save(any(IdempotencyRecordEntity.class));
     }
 
     @Test
@@ -758,10 +758,10 @@ public class AccountServiceTest {
 
         verify(transactionRepository, times(2)).save(any(TransactionEntity.class));
 
-        ArgumentCaptor<IdempotencyRecord> captor =
-                ArgumentCaptor.forClass(IdempotencyRecord.class);
+        ArgumentCaptor<IdempotencyRecordEntity> captor =
+                ArgumentCaptor.forClass(IdempotencyRecordEntity.class);
         verify(idempotencyRecordRepository).save(captor.capture());
-        IdempotencyRecord savedRecord = captor.getValue();
+        IdempotencyRecordEntity savedRecord = captor.getValue();
 
         assertEquals("1", savedRecord.getAccountNumber());
         assertEquals(idempotencyKey, savedRecord.getIdempotencyKey());
@@ -779,7 +779,7 @@ public class AccountServiceTest {
     void deposit_withDifferentBigDecimalScales_treatsAmountsAsEqual() {
         String idempotencyKey = "deposit-key-123";
         String requestFingerprint = "DEPOSIT | 1 | 100";
-        IdempotencyRecord idempotencyRecord = new IdempotencyRecord(
+        IdempotencyRecordEntity idempotencyRecordEntity = new IdempotencyRecordEntity(
                 idempotencyKey,
                 requestFingerprint,
                 "1",
@@ -788,7 +788,7 @@ public class AccountServiceTest {
         );
 
         when(idempotencyRecordRepository.findByIdempotencyKey(idempotencyKey))
-                .thenReturn(Optional.of(idempotencyRecord));
+                .thenReturn(Optional.of(idempotencyRecordEntity));
 
         AccountResponse response = accountService.deposit(
                 idempotencyKey,
@@ -796,12 +796,12 @@ public class AccountServiceTest {
                 new BigDecimal("100.00")
         );
 
-        assertEquals(idempotencyRecord.getBalance(), response.balance());
-        assertEquals(idempotencyRecord.getAccountNumber(), response.accountNumber());
+        assertEquals(idempotencyRecordEntity.getBalance(), response.balance());
+        assertEquals(idempotencyRecordEntity.getAccountNumber(), response.accountNumber());
 
         verify(accountRepository, never()).findByAccountNumber(anyString());
         verify(transactionRepository, never()).save(any(TransactionEntity.class));
-        verify(idempotencyRecordRepository, never()).save(any(IdempotencyRecord.class));
+        verify(idempotencyRecordRepository, never()).save(any(IdempotencyRecordEntity.class));
     }
 
     @Test
@@ -812,6 +812,6 @@ public class AccountServiceTest {
 
         verify(accountRepository, never()).findByAccountNumber(anyString());
         verify(transactionRepository, never()).save(any(TransactionEntity.class));
-        verify(idempotencyRecordRepository, never()).save(any(IdempotencyRecord.class));
+        verify(idempotencyRecordRepository, never()).save(any(IdempotencyRecordEntity.class));
     }
 }

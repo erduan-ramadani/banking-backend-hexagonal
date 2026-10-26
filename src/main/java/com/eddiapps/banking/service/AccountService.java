@@ -5,7 +5,7 @@ import com.eddiapps.banking.domain.exception.InvalidAmountException;
 import com.eddiapps.banking.dto.AccountResponse;
 import com.eddiapps.banking.dto.TransactionResponse;
 import com.eddiapps.banking.entity.AccountEntity;
-import com.eddiapps.banking.entity.IdempotencyRecord;
+import com.eddiapps.banking.entity.IdempotencyRecordEntity;
 import com.eddiapps.banking.entity.TransactionEntity;
 import com.eddiapps.banking.exception.AccountNotFoundException;
 import com.eddiapps.banking.exception.IdempotencyConflictException;
@@ -182,22 +182,22 @@ public class AccountService {
     }
 
     private Optional<AccountResponse> findStoredIdempotentResponse(String idempotencyKey, String requestFingerprint) {
-        Optional<IdempotencyRecord> existingRecord = idempotencyRecordRepository.findByIdempotencyKey(idempotencyKey);
+        Optional<IdempotencyRecordEntity> existingRecord = idempotencyRecordRepository.findByIdempotencyKey(idempotencyKey);
         if (existingRecord.isPresent()) {
-            IdempotencyRecord idempotencyRecord = existingRecord.get();
-            if (!idempotencyRecord.getRequestFingerprint().equals(requestFingerprint)) {
+            IdempotencyRecordEntity idempotencyRecordEntity = existingRecord.get();
+            if (!idempotencyRecordEntity.getRequestFingerprint().equals(requestFingerprint)) {
                 throw new IdempotencyConflictException("Idempotency key already used for a different request");
             }
 
             return Optional.of(
-                    new AccountResponse(idempotencyRecord.getAccountNumber(), idempotencyRecord.getBalance()));
+                    new AccountResponse(idempotencyRecordEntity.getAccountNumber(), idempotencyRecordEntity.getBalance()));
         }
         return Optional.empty();
     }
 
     private void saveIdempotencyRecord(String idempotencyKey, String requestFingerprint, AccountEntity account) {
         idempotencyRecordRepository.save(
-                new IdempotencyRecord(
+                new IdempotencyRecordEntity(
                         idempotencyKey,
                         requestFingerprint,
                         account.getAccountNumber(),

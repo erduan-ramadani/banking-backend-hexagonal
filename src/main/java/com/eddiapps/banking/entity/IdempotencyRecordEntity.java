@@ -6,7 +6,7 @@ import java.time.Instant;
 import jakarta.persistence.*;
 
 @Entity
-public class IdempotencyRecord {
+public class IdempotencyRecordEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,11 +21,11 @@ public class IdempotencyRecord {
     @Column(nullable = false)
     private Instant createdAt;
 
-    protected IdempotencyRecord() {
+    protected IdempotencyRecordEntity() {
     }
 
-    public IdempotencyRecord(String idempotencyKey, String requestFingerprint, String accountNumber,
-                             BigDecimal balance, Instant createdAt
+    public IdempotencyRecordEntity(String idempotencyKey, String requestFingerprint, String accountNumber,
+                                   BigDecimal balance, Instant createdAt
     ) {
         this.idempotencyKey = idempotencyKey;
         this.requestFingerprint = requestFingerprint;

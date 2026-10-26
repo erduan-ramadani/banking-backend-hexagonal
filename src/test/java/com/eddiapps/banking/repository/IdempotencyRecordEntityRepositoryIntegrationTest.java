@@ -2,7 +2,7 @@ package com.eddiapps.banking.repository;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.eddiapps.banking.entity.IdempotencyRecord;
+import com.eddiapps.banking.entity.IdempotencyRecordEntity;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 @DataJpaTest
-public class IdempotencyRecordRepositoryIntegrationTest {
+public class IdempotencyRecordEntityRepositoryIntegrationTest {
 
     @Autowired
     private IdempotencyRecordRepository idempotencyRecordRepository;
@@ -24,17 +24,17 @@ public class IdempotencyRecordRepositoryIntegrationTest {
         String idempotencyKey = "duplicate-key123";
 
         String requestFingerprint1 = "DEPOSIT | 1 | 40";
-        IdempotencyRecord idempotencyRecord1 = new IdempotencyRecord(
+        IdempotencyRecordEntity idempotencyRecordEntity1 = new IdempotencyRecordEntity(
                 idempotencyKey,
                 requestFingerprint1,
                 "1",
                 BigDecimal.valueOf(100),
                 Instant.now()
         );
-        idempotencyRecordRepository.saveAndFlush(idempotencyRecord1);
+        idempotencyRecordRepository.saveAndFlush(idempotencyRecordEntity1);
 
         String requestFingerprint2 = "WITHDRAWAL | 2 | 50";
-        IdempotencyRecord idempotencyRecord2 = new IdempotencyRecord(
+        IdempotencyRecordEntity idempotencyRecordEntity2 = new IdempotencyRecordEntity(
                 idempotencyKey,
                 requestFingerprint2,
                 "2",
@@ -42,7 +42,7 @@ public class IdempotencyRecordRepositoryIntegrationTest {
                 Instant.now()
         );
         assertThrows(DataIntegrityViolationException.class,
-                () -> idempotencyRecordRepository.saveAndFlush(idempotencyRecord2)
+                () -> idempotencyRecordRepository.saveAndFlush(idempotencyRecordEntity2)
         );
     }
 
@@ -50,18 +50,18 @@ public class IdempotencyRecordRepositoryIntegrationTest {
     void findByIdempotencyKey_withExistingRecord_returnsRecord() {
         String idempotencyKey = "deposit-key123";
         String requestFingerprint = "DEPOSIT | 1 | 100";
-        IdempotencyRecord idempotencyRecord = new IdempotencyRecord(
+        IdempotencyRecordEntity idempotencyRecordEntity = new IdempotencyRecordEntity(
                 idempotencyKey,
                 requestFingerprint,
                 "1",
                 BigDecimal.valueOf(50),
                 Instant.now()
         );
-        idempotencyRecordRepository.saveAndFlush(idempotencyRecord);
-        Optional<IdempotencyRecord> loadedIdempotencyRecord = idempotencyRecordRepository.findByIdempotencyKey(idempotencyKey);
+        idempotencyRecordRepository.saveAndFlush(idempotencyRecordEntity);
+        Optional<IdempotencyRecordEntity> loadedIdempotencyRecord = idempotencyRecordRepository.findByIdempotencyKey(idempotencyKey);
 
         assertTrue(loadedIdempotencyRecord.isPresent());
-        assertEquals(idempotencyRecord.getIdempotencyKey(), loadedIdempotencyRecord.get().getIdempotencyKey());
-        assertEquals(idempotencyRecord.getRequestFingerprint(), loadedIdempotencyRecord.get().getRequestFingerprint());
+        assertEquals(idempotencyRecordEntity.getIdempotencyKey(), loadedIdempotencyRecord.get().getIdempotencyKey());
+        assertEquals(idempotencyRecordEntity.getRequestFingerprint(), loadedIdempotencyRecord.get().getRequestFingerprint());
     }
 }

@@ -3,7 +3,7 @@ package com.eddiapps.banking.service;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.eddiapps.banking.entity.AccountEntity;
-import com.eddiapps.banking.entity.IdempotencyRecord;
+import com.eddiapps.banking.entity.IdempotencyRecordEntity;
 import com.eddiapps.banking.exception.IdempotencyConflictException;
 import com.eddiapps.banking.repository.AccountRepository;
 import com.eddiapps.banking.repository.IdempotencyRecordRepository;
@@ -38,9 +38,9 @@ public class AccountServiceIntegrationTest {
         assertTrue(account.isPresent());
         assertEquals(0, account.get().getBalance().compareTo(BigDecimal.valueOf(100)));
 
-        Optional<IdempotencyRecord> idempotencyRecord = idempotencyRecordRepository.findByIdempotencyKey(idempotencyKey);
+        Optional<IdempotencyRecordEntity> idempotencyRecord = idempotencyRecordRepository.findByIdempotencyKey(idempotencyKey);
         assertTrue(idempotencyRecord.isPresent());
-        IdempotencyRecord existingRecord = idempotencyRecord.get();
+        IdempotencyRecordEntity existingRecord = idempotencyRecord.get();
         assertEquals("1", existingRecord.getAccountNumber());
         assertEquals(0, existingRecord.getBalance().compareTo(BigDecimal.valueOf(100)));
         assertEquals("DEPOSIT | 1 | 100", existingRecord.getRequestFingerprint());
