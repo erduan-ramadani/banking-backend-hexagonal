@@ -3,6 +3,7 @@ package com.eddiapps.banking.adapter.out.persistence;
 import com.eddiapps.banking.application.port.out.LoadIdempotencyPort;
 import com.eddiapps.banking.application.port.out.SaveIdempotencyPort;
 import com.eddiapps.banking.domain.model.Account;
+import com.eddiapps.banking.domain.model.IdempotencyRecord;
 import com.eddiapps.banking.entity.IdempotencyRecordEntity;
 import com.eddiapps.banking.repository.IdempotencyRecordRepository;
 
@@ -30,5 +31,17 @@ public class IdempotencyPersistenceAdapter implements LoadIdempotencyPort, SaveI
                 Instant.now()
         );
         idempotencyRecordRepository.save(idempotencyRecordEntity);
+    }
+
+    @Override
+    public Optional<IdempotencyRecord> findByIdempotencyKey(String idempotencyKey) {
+        return idempotencyRecordRepository.findByIdempotencyKey(idempotencyKey).map(record ->
+                new IdempotencyRecord(
+                        record.getIdempotencyKey(),
+                        record.getRequestFingerprint(),
+                        record.getAccountNumber(),
+                        record.getBalance(),
+                        record.getCreatedAt()
+                ));
     }
 }
