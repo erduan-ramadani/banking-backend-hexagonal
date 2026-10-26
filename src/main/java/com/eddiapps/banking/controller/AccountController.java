@@ -1,6 +1,7 @@
 package com.eddiapps.banking.controller;
 
 import com.eddiapps.banking.application.port.in.DepositUseCase;
+import com.eddiapps.banking.application.port.in.TransferUseCase;
 import com.eddiapps.banking.application.port.in.WithdrawUseCase;
 import com.eddiapps.banking.domain.model.Account;
 import com.eddiapps.banking.dto.AccountResponse;
@@ -27,11 +28,18 @@ public class AccountController {
     private final AccountService accountService;
     private final DepositUseCase depositUseCase;
     private final WithdrawUseCase withdrawUseCase;
+    private final TransferUseCase transferUseCase;
 
-    public AccountController(AccountService accountService, DepositUseCase depositUseCase, WithdrawUseCase withdrawUseCase) {
+    public AccountController(
+            AccountService accountService,
+            DepositUseCase depositUseCase,
+            WithdrawUseCase withdrawUseCase,
+            TransferUseCase transferUseCase
+    ) {
         this.accountService = accountService;
         this.depositUseCase = depositUseCase;
         this.withdrawUseCase = withdrawUseCase;
+        this.transferUseCase = transferUseCase;
     }
 
     @PostMapping("/{accountNumber}/deposit")
@@ -66,12 +74,11 @@ public class AccountController {
             @RequestHeader("Idempotency-Key") String idempotencyKey,
             @Valid @RequestBody TransferRequest request
     ) {
-        return accountService.transfer(
-                idempotencyKey,
+        Account account = transferUseCase.transfer(idempotencyKey,
                 request.senderAccountNumber(),
                 request.recipientAccountNumber(),
-                request.amount()
-        );
+                request.amount());
+        return new AccountResponse(account.getAccountNumber(), account.getBalance());
     }
 
     @GetMapping("/{accountNumber}/history")

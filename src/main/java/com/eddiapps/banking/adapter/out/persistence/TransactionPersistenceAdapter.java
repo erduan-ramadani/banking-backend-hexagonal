@@ -26,4 +26,9 @@ public class TransactionPersistenceAdapter implements SaveTransactionPort {
     public void saveWithdrawal(String accountNumber, BigDecimal amount) {
         transactionRepository.save(new TransactionEntity(accountNumber, TransactionType.WITHDRAWAL, amount));
     }
+
+    @Override
+    public void saveTransfer(String accountNumber, BigDecimal amount, TransactionType type) {
+        transactionRepository.save(new TransactionEntity(accountNumber, type, amount));
+    }
 }
