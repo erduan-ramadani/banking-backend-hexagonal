@@ -1,15 +1,20 @@
 package com.eddiapps.banking.application.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.eddiapps.banking.application.port.out.LoadAccountPort;
+import com.eddiapps.banking.application.port.out.LoadIdempotencyPort;
 import com.eddiapps.banking.application.port.out.SaveAccountPort;
+import com.eddiapps.banking.application.port.out.SaveIdempotencyPort;
+import com.eddiapps.banking.application.port.out.SaveTransactionPort;
 import com.eddiapps.banking.domain.exception.InvalidAmountException;
 import com.eddiapps.banking.domain.model.Account;
-import com.eddiapps.banking.domain.exception.AccountNotFoundException;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +37,12 @@ public class DepositApplicationServiceTest {
     LoadAccountPort loadAccountPort;
     @Mock
     SaveAccountPort saveAccountPort;
+    @Mock
+    SaveTransactionPort saveTransactionPort;
+    @Mock
+    LoadIdempotencyPort loadIdempotencyPort;
+    @Mock
+    SaveIdempotencyPort saveIdempotencyPort;
     @InjectMocks
     DepositApplicationService depositApplicationService;
 
@@ -45,12 +56,15 @@ public class DepositApplicationServiceTest {
 
     @Test
     void shouldDepositMoneySuccessfully() {
+        String idempotencyKey = "deposit-key-123";
         Account account = new Account(1L, "1", BigDecimal.valueOf(100), 1L);
 
-        when(loadAccountPort.findById(1L)).thenReturn(Optional.of(account));
+        when(loadAccountPort.findByAccountNumber("1")).thenReturn(Optional.of(account));
         when(saveAccountPort.save(account)).thenReturn(account);
+        when(loadIdempotencyPort.findByIdempotencyKey(idempotencyKey)).thenReturn(Optional.empty());
 
-        Account updatedAccount = depositApplicationService.deposit(1L, BigDecimal.valueOf(50));
+        Account updatedAccount = depositApplicationService
+                .deposit(idempotencyKey, "1", BigDecimal.valueOf(50));
 
         assertEquals(BigDecimal.valueOf(150), updatedAccount.getBalance());
 
@@ -58,43 +72,53 @@ public class DepositApplicationServiceTest {
         verify(saveAccountPort).save(accountCaptor.capture());
         Account capturedAccount = accountCaptor.getValue();
         assertEquals(BigDecimal.valueOf(150), capturedAccount.getBalance());
+
+        verify(saveTransactionPort).saveDeposit("1", BigDecimal.valueOf(50));
+        verify(saveIdempotencyPort).save(idempotencyKey, "DEPOSIT | 1 | 50", account);
     }
 
     @Test
-    void shouldThrowExceptionWhenAccountNotFound() {
-        when(loadAccountPort.findById(99L)).thenReturn(Optional.empty());
+    void shouldCreateAccountWhenAccountNotFound() {
+        String idempotencyKey = "deposit-key-123";
 
-        assertThrows(AccountNotFoundException.class,
-                () -> depositApplicationService.deposit(99L, BigDecimal.valueOf(50)));
+        when(loadAccountPort.findByAccountNumber("99")).thenReturn(Optional.empty());
+        when(saveAccountPort.save(any(Account.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
-        verify(saveAccountPort, never()).save(any(Account.class));
+        Account newAccount = depositApplicationService.deposit(idempotencyKey, "99", BigDecimal.valueOf(50));
+
+        assertNotNull(newAccount);
+        assertEquals("99", newAccount.getAccountNumber());
+        assertEquals(BigDecimal.valueOf(50), newAccount.getBalance());
+
+        verify(saveAccountPort).save(newAccount);
+        verify(saveTransactionPort).saveDeposit("99", BigDecimal.valueOf(50));
     }
 
     @ParameterizedTest
     @MethodSource("invalidAmounts")
     void shouldRejectInvalidDepositAmounts(BigDecimal amount) {
-        Account account = new Account(1L, "1", BigDecimal.valueOf(100), 1L);
-
-        when(loadAccountPort.findById(1L)).thenReturn(Optional.of(account));
+        String idempotencyKey = "deposit-key-123";
 
         assertThrows(InvalidAmountException.class,
-                () -> depositApplicationService.deposit(1L, amount)
+                () -> depositApplicationService.deposit(idempotencyKey, "1", amount)
         );
 
-        verify(saveAccountPort, never()).save(any(Account.class));
-
-        assertEquals(BigDecimal.valueOf(100), account.getBalance());
+        verifyNoInteractions(loadAccountPort, saveAccountPort);
     }
 
     @Test
     void shouldPropagateExceptionWhenSavingFails() {
+        String idempotencyKey = "deposit-key-123";
         Account account = new Account(1L, "1", BigDecimal.valueOf(100), 1L);
 
-        when(loadAccountPort.findById(1L)).thenReturn(Optional.of(account));
+        when(loadIdempotencyPort.findByIdempotencyKey(idempotencyKey)).thenReturn(Optional.empty());
+        when(loadAccountPort.findByAccountNumber("1")).thenReturn(Optional.of(account));
         when(saveAccountPort.save(account)).thenThrow(new OptimisticLockingFailureException("Version conflict"));
 
+
         assertThrows(OptimisticLockingFailureException.class,
-                () -> depositApplicationService.deposit(1L, BigDecimal.valueOf(50))
+                () -> depositApplicationService.deposit(idempotencyKey, "1", BigDecimal.valueOf(50))
         );
     }
 
