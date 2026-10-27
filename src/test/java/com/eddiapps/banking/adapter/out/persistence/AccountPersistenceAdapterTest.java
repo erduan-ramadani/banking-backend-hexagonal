@@ -1,7 +1,11 @@
 package com.eddiapps.banking.adapter.out.persistence;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.eddiapps.banking.domain.model.Account;
@@ -13,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.OptimisticLockingFailureException;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -41,5 +46,18 @@ public class AccountPersistenceAdapterTest {
         assertEquals("12345", loadedAccount.getAccountNumber());
         assertEquals(BigDecimal.valueOf(100), loadedAccount.getBalance());
         assertEquals(1L, loadedAccount.getVersion());
+    }
+
+    @Test
+    void shouldRejectAccountWithOutdatedVersion() {
+        Account account = new Account(1L, "1", BigDecimal.valueOf(100), 1L);
+        AccountEntity accountEntity = new AccountEntity("1");
+        accountEntity.setVersion(2L);
+
+        when(accountRepository.findById(1L)).thenReturn(Optional.of(accountEntity));
+
+        assertThrows(OptimisticLockingFailureException.class, () -> accountPersistenceAdapter.save(account));
+
+        verify(accountRepository, never()).save(any());
     }
 }
