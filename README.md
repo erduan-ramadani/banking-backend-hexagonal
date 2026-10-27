@@ -1,629 +1,194 @@
-# Banking App
+# Banking Backend — Hexagonal Architecture
 
-Simple Spring Boot backend prototype for basic banking operations.
+A Java and Spring Boot REST API for essential banking operations, built using **Hexagonal Architecture (Ports & Adapters)**.
 
-The application supports deposits, withdrawals, transfers, retrieving the current account balance and viewing the
-transaction history.
+This project is the architectural evolution of my [Layered Architecture implementation](https://github.com/erduan-ramadani/banking-backend-layered). Both versions implement the same banking domain, making it easier to compare a conventional layered design with an approach that separates business rules from frameworks and infrastructure.
 
-If a deposit is made to an unknown account number, a new account is created automatically.
+## Architecture at a glance
 
-Write operations support idempotency through the `Idempotency-Key` HTTP header to prevent duplicate transactions
-when a request is retried.
+```mermaid
+flowchart LR
+    Client[REST Client]
+    Controller[REST Controller<br/>Inbound Adapter]
+    InPorts[Input Ports<br/>Use Case Interfaces]
+    Services[Application Services]
+    Domain[Domain Models<br/>Business Rules]
+    OutPorts[Output Ports<br/>Persistence Interfaces]
+    Adapter[Persistence Adapters]
+    JPA[Spring Data JPA<br/>Repositories & Entities]
+    DB[(H2 Database)]
 
-## Tech Stack
+    Client --> Controller --> InPorts --> Services
+    Services --> Domain
+    Services --> OutPorts
+    Adapter -. implements .-> OutPorts
+    Adapter --> JPA --> DB
 
-- Java
-- Spring Boot
-- Spring Web
-- Spring Data JPA
-- H2
-- Jakarta Validation
-- JUnit 5
-- Mockito
-- MockMvc
-- Gradle
+    classDef core fill:#e8f2ff,stroke:#2563eb,color:#102a43
+    classDef edge fill:#f2f4f7,stroke:#667085,color:#101828
+    class InPorts,Services,Domain,OutPorts core
+    class Client,Controller,Adapter,JPA,DB edge
+```
+
+**Key idea:** Business logic lives in the domain and application layers. REST and database implementations are adapters, connected through interfaces (ports). The application does not need to know how data is stored.
 
 ## Features
 
-- Deposit money
-- Create a new account automatically on first deposit
-- Withdraw money
-- Prevent negative account balances
-- Retrieve the current balance
-- Transfer money between accounts
-- Transaction history for each account
-- Track deposits, withdrawals and transfers
-- Idempotent write operations using `Idempotency-Key`
-- Detect reuse of an idempotency key for a different request
-- Request validation
-- Global exception handling
-- Service tests
-- Controller tests
+- **Deposit** money into an account; create the account if it does not exist.
+- **Withdraw** money with positive-amount and sufficient-funds validation.
+- **Transfer** money between accounts with transactional consistency.
+- **Balance lookup** by account number.
+- **Transaction history** for account activity.
+- **Idempotency keys** for write operations to prevent duplicate processing; conflicting reuse of a key is rejected.
+- **Optimistic locking** using JPA `@Version` to detect concurrent account updates.
+- **Centralized exception handling** with appropriate HTTP error responses.
 
-## Idempotency
+## Technology stack
 
-The write endpoints require an `Idempotency-Key` header:
+| Area | Technology |
+| --- | --- |
+| Language | Java |
+| Framework | Spring Boot |
+| API | REST / JSON |
+| Persistence | Spring Data JPA / Hibernate |
+| Database | H2 |
+| Build | Maven |
+| Tests | JUnit 5, Mockito |
+| Architecture | Hexagonal Architecture, Ports & Adapters |
 
-- `POST /api/accounts/{accountNumber}/deposit`
-- `POST /api/accounts/{accountNumber}/withdraw`
-- `POST /api/accounts/transfer`
+## Project structure
 
-The key identifies one logical operation.
-
-The key must not be empty or contain only whitespace. Invalid idempotency keys return `400 Bad Request`.
-
-If the same request is retried with the same key, the original response is returned and the operation is not
-executed again.
-
-If the same key is reused for a different request, the API returns:
+The important packages are organized by responsibility:
 
 ```text
-409 Conflict
+com.eddiapps.banking
+├── domain
+│   ├── model                 # Account, Transaction, IdempotencyRecord
+│   └── exception             # Business-rule exceptions
+├── application
+│   ├── port
+│   │   ├── in                # Deposit, Withdraw, Transfer, Balance, History
+│   │   └── out               # Account, transaction, idempotency ports
+│   ├── service               # Use case implementations
+│   └── exception
+├── adapter
+│   ├── in
+│   │   └── web               # REST controllers, DTOs, exception handling
+│   └── out
+│       └── persistence       # JPA-backed port implementations
+├── entity                    # JPA entities
+└── repository                # Spring Data repositories
 ```
 
-Example:
+## Example: Deposit flow
 
-```text
-Idempotency-Key: deposit-key-123
+```mermaid
+sequenceDiagram
+    actor Client
+    participant API as REST Controller
+    participant Service as Deposit Application Service
+    participant Idem as Idempotency Port
+    participant Accounts as Account Ports
+    participant Domain as Account Domain Model
+    participant Tx as Transaction Port
+
+    Client->>API: Deposit request + Idempotency-Key
+    API->>Service: deposit(key, accountNumber, amount)
+    Service->>Idem: Check key and request fingerprint
+    alt Previously processed identical request
+        Idem-->>Service: Stored result
+        Service-->>API: Previous result
+    else New request
+        Service->>Accounts: Find account by number
+        Accounts-->>Service: Existing account or empty
+        Note over Service,Domain: Create account if absent
+        Service->>Domain: deposit(amount)
+        Domain-->>Service: Updated balance
+        Service->>Accounts: Save account
+        Service->>Tx: Record deposit
+        Service->>Idem: Store idempotency result
+        Service-->>API: Updated account
+    end
+    API-->>Client: HTTP response
 ```
 
-A new logical operation should use a new idempotency key.
+## Business rules
 
-The idempotency key is also protected by a database-level unique constraint, so the same key cannot be stored twice.
+| Operation | Important constraints |
+| --- | --- |
+| Deposit | Amount must be greater than zero |
+| Withdraw | Amount must be greater than zero; sufficient balance required |
+| Transfer | Different sender and recipient; both accounts must exist; sufficient funds; atomic update |
+| Idempotent write | Same key and request returns the existing result; same key with a different request is rejected |
+| Concurrent update | Stale account versions are rejected rather than silently overwriting changes |
 
-### Known concurrency limitation
+### Error handling
 
-Two requests with the same new idempotency key that arrive at almost exactly the same time can both pass the initial
-lookup before either request has stored its idempotency record.
-In that race condition, one request can succeed while the other collides with the unique constraint.
-Full concurrency coordination for idempotency keys is not implemented yet.
+The API maps domain and application errors to HTTP responses, including:
 
-## Run the Application
+| Status | Example |
+| --- | --- |
+| `400 Bad Request` | Invalid amount or invalid transfer input |
+| `404 Not Found` | Requested account does not exist |
+| `409 Conflict` | Idempotency-key conflict or optimistic-locking conflict |
+| `422 Unprocessable Entity` | Insufficient funds |
 
-No external database is required because the project uses H2.
+## Running locally
 
-Start the application on Windows:
+**Prerequisites:** A compatible JDK and Maven installation.
 
-```powershell
-.\gradlew.bat bootRun
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/erduan-ramadani/banking-backend-hexagonal.git
+   cd banking-backend-hexagonal
+   ```
+
+2. Start the Spring Boot application using your project's Maven wrapper, if present:
+
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+
+   On Windows, use `mvnw.cmd spring-boot:run`. If the repository does not include a wrapper, use `mvn spring-boot:run`.
+
+3. The application is configured to run locally at `http://localhost:8080` in the development setup.
+
+### Run tests
+
+```bash
+./mvnw test
 ```
 
-The application runs on:
+Or run individual test classes directly from IntelliJ IDEA.
 
-```text
-http://localhost:8080
-```
+> **Note:** The sample commands assume the Maven setup used in the project. Check the repository's build files and configuration for the exact JDK version and any environment-specific settings.
 
-## API
+## Why Hexagonal Architecture?
 
-Base path:
+The original implementation used a traditional flow of **Controller → Service → Repository**. The hexagonal version introduces explicit boundaries:
 
-```text
-/api/accounts
-```
+- **Domain:** Banking rules and entities, independent of HTTP and persistence.
+- **Input ports:** Interfaces that describe what the application can do.
+- **Application services:** Orchestrate use cases and transactions.
+- **Output ports:** Interfaces for capabilities the application needs, such as saving accounts or transactions.
+- **Adapters:** Translate between the application and external technologies such as REST and JPA.
 
-## Test the API with PowerShell
+This structure improves separation of concerns and makes core behavior easier to test with mocked ports. It also creates flexibility to replace infrastructure implementations without rewriting the business rules.
 
-Start the application first and keep it running.
+## Compare both implementations
 
-Open another PowerShell window and execute the following requests in order.
+| | Layered | Hexagonal |
+| --- | --- | --- |
+| Main organization | Technical layers | Domain, use cases, ports, adapters |
+| Typical flow | Controller → Service → Repository | Inbound adapter → input port → application service → output port → outbound adapter |
+| Persistence boundary | Service commonly depends on repository | Application depends on a persistence port |
+| Main learning focus | Straightforward Spring Boot application structure | Dependency inversion and explicit architectural boundaries |
 
-### 1. Create an account with a deposit
+**Repositories:** [Layered version](https://github.com/erduan-ramadani/banking-backend-layered) · [Hexagonal version](https://github.com/erduan-ramadani/banking-backend-hexagonal)
 
-Depositing money into an unknown account automatically creates the account.
+## Author
 
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/accounts/1/deposit" `
-  -Headers @{ "Idempotency-Key" = "deposit-1-100" } `
-  -ContentType "application/json" `
-  -Body '{"amount":100}'
-```
+**Erduan Ramadani** — Software Developer | Java, Spring Boot, Kotlin & Android
 
-Expected result:
-
-```text
-accountNumber balance
-------------- -------
-1             100
-```
-
-### 2. Get the current balance
-
-```powershell
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://localhost:8080/api/accounts/1"
-```
-
-Expected result:
-
-```text
-accountNumber balance
-------------- -------
-1             100
-```
-
-### 3. Add another deposit
-
-This is a new logical operation and therefore uses a new idempotency key.
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/accounts/1/deposit" `
-  -Headers @{ "Idempotency-Key" = "deposit-1-50" } `
-  -ContentType "application/json" `
-  -Body '{"amount":50}'
-```
-
-Expected result:
-
-```text
-accountNumber balance
-------------- -------
-1             150
-```
-
-### 4. Withdraw money
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/accounts/1/withdraw" `
-  -Headers @{ "Idempotency-Key" = "withdraw-1-40" } `
-  -ContentType "application/json" `
-  -Body '{"amount":40}'
-```
-
-Expected result:
-
-```text
-accountNumber balance
-------------- -------
-1             110
-```
-
-### 5. Check the balance again
-
-```powershell
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://localhost:8080/api/accounts/1"
-```
-
-Expected result:
-
-```text
-accountNumber balance
-------------- -------
-1             110
-```
-
-### 6. Test insufficient funds
-
-The balance is currently 110. Trying to withdraw 200 should fail.
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/accounts/1/withdraw" `
-  -Headers @{ "Idempotency-Key" = "withdraw-1-200" } `
-  -ContentType "application/json" `
-  -Body '{"amount":200}'
-```
-
-Expected response:
-
-```json
-{
-  "status": 422,
-  "message": "Insufficient funds",
-  "timestamp": "..."
-}
-```
-
-### 7. Test an invalid amount
-
-Deposit and withdrawal amounts must be greater than zero.
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/accounts/1/deposit" `
-  -Headers @{ "Idempotency-Key" = "deposit-invalid-1" } `
-  -ContentType "application/json" `
-  -Body '{"amount":0}'
-```
-
-Expected response:
-
-```json
-{
-  "status": 400,
-  "message": "Amount must be greater than 0",
-  "timestamp": "..."
-}
-```
-
-### 8. Test an unknown account
-
-```powershell
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://localhost:8080/api/accounts/99"
-```
-
-Expected response:
-
-```json
-{
-  "status": 404,
-  "message": "Account not found",
-  "timestamp": "..."
-}
-```
-
-### 9. Create a second account
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/accounts/2/deposit" `
-  -Headers @{ "Idempotency-Key" = "deposit-2-50" } `
-  -ContentType "application/json" `
-  -Body '{"amount":50}'
-```
-
-Expected result:
-
-```text
-accountNumber balance
-------------- -------
-2             50
-```
-
-### 10. Transfer money
-
-Transfer 40 from account 1 to account 2.
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/accounts/transfer" `
-  -Headers @{ "Idempotency-Key" = "transfer-1-2-40" } `
-  -ContentType "application/json" `
-  -Body '{
-    "senderAccountNumber":"1",
-    "recipientAccountNumber":"2",
-    "amount":40
-  }'
-```
-
-Expected result:
-
-```text
-accountNumber balance
-------------- -------
-1             70
-```
-
-The response contains the updated balance of the sender account.
-
-### 11. Check both balances after the transfer
-
-Account 1:
-
-```powershell
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://localhost:8080/api/accounts/1"
-```
-
-Expected result:
-
-```text
-accountNumber balance
-------------- -------
-1             70
-```
-
-Account 2:
-
-```powershell
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://localhost:8080/api/accounts/2"
-```
-
-Expected result:
-
-```text
-accountNumber balance
-------------- -------
-2             90
-```
-
-### 12. Test a transfer with insufficient funds
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/accounts/transfer" `
-  -Headers @{ "Idempotency-Key" = "transfer-insufficient-1" } `
-  -ContentType "application/json" `
-  -Body '{
-    "senderAccountNumber":"1",
-    "recipientAccountNumber":"2",
-    "amount":100
-  }'
-```
-
-Expected response:
-
-```json
-{
-  "status": 422,
-  "message": "Insufficient funds",
-  "timestamp": "..."
-}
-```
-
-The account balances remain unchanged.
-
-### 13. Test a transfer to the same account
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/accounts/transfer" `
-  -Headers @{ "Idempotency-Key" = "transfer-same-account-1" } `
-  -ContentType "application/json" `
-  -Body '{
-    "senderAccountNumber":"1",
-    "recipientAccountNumber":"1",
-    "amount":10
-  }'
-```
-
-Expected response:
-
-```json
-{
-  "status": 400,
-  "message": "Sender and recipient must be different",
-  "timestamp": "..."
-}
-```
-
-### 14. Get the transaction history
-
-```powershell
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://localhost:8080/api/accounts/1/history"
-```
-
-The result contains all successful transactions for the account, ordered by timestamp descending.
-
-Example:
-
-```text
-type                   : TRANSFER
-amount                 : 40
-senderAccountNumber    : 1
-recipientAccountNumber : 2
-
-type                   : WITHDRAWAL
-amount                 : 40
-senderAccountNumber    :
-recipientAccountNumber :
-
-type                   : DEPOSIT
-amount                 : 50
-senderAccountNumber    :
-recipientAccountNumber :
-
-type                   : DEPOSIT
-amount                 : 100
-senderAccountNumber    :
-recipientAccountNumber :
-```
-
-Failed operations are not added to the transaction history.
-
-### 15. Get the transaction history of the recipient
-
-```powershell
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://localhost:8080/api/accounts/2/history"
-```
-
-The successful transfer is also visible in the recipient account history.
-
-Example:
-
-```text
-type                   : TRANSFER
-amount                 : 40
-senderAccountNumber    : 1
-recipientAccountNumber : 2
-
-type                   : DEPOSIT
-amount                 : 50
-senderAccountNumber    :
-recipientAccountNumber :
-```
-
-### 16. Test transaction history for an unknown account
-
-```powershell
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://localhost:8080/api/accounts/99/history"
-```
-
-Expected response:
-
-```json
-{
-  "status": 404,
-  "message": "Account not found",
-  "timestamp": "..."
-}
-```
-
-### 17. Test an idempotent retry
-
-Create another account:
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/accounts/3/deposit" `
-  -Headers @{ "Idempotency-Key" = "idempotency-demo-123" } `
-  -ContentType "application/json" `
-  -Body '{"amount":100}'
-```
-
-Expected result:
-
-```text
-accountNumber balance
-------------- -------
-3             100
-```
-
-Send exactly the same request again with the same idempotency key:
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/accounts/3/deposit" `
-  -Headers @{ "Idempotency-Key" = "idempotency-demo-123" } `
-  -ContentType "application/json" `
-  -Body '{"amount":100}'
-```
-
-Expected result:
-
-```text
-accountNumber balance
-------------- -------
-3             100
-```
-
-The deposit is not executed a second time.
-
-Verify the balance:
-
-```powershell
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://localhost:8080/api/accounts/3"
-```
-
-Expected result:
-
-```text
-accountNumber balance
-------------- -------
-3             100
-```
-
-### 18. Test reuse of an idempotency key for a different request
-
-Reuse the previous key but change the amount:
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8080/api/accounts/3/deposit" `
-  -Headers @{ "Idempotency-Key" = "idempotency-demo-123" } `
-  -ContentType "application/json" `
-  -Body '{"amount":200}'
-```
-
-Expected response:
-
-```json
-{
-  "status": 409,
-  "message": "Idempotency key already used for a different request",
-  "timestamp": "..."
-}
-```
-
-The balance remains unchanged.
-
-## Error Handling
-
-The application uses a global exception handler.
-
-Possible errors include:
-
-- `404 Not Found` if an account does not exist
-- `400 Bad Request` if the amount is invalid
-- `422 Unprocessable Content` if the account does not have enough funds
-- `400 Bad Request` if sender and recipient accounts are identical
-- `409 Conflict` if an `Idempotency-Key` is reused for a different request
-- `400 Bad Request` if an `Idempotency-Key` is empty or blank
-
-## Tests
-
-Service tests use JUnit 5 and Mockito.
-
-Controller tests use MockMvc with a mocked service.
-
-Covered scenarios include:
-
-- deposits into existing and unknown accounts
-- withdrawals with sufficient and insufficient funds
-- invalid amounts
-- unknown accounts
-- successful transfers
-- transfers with insufficient funds
-- transfers with identical sender and recipient
-- transaction history retrieval
-- transaction history for unknown accounts
-- transaction history for accounts without transactions
-- persistence of deposit history
-- persistence of withdrawal history
-- persistence of transfer history for sender and recipient
-- prevention of history entries for failed operations
-- returning the stored response for an idempotent retry
-- preventing duplicate transaction execution for repeated requests
-- rejecting reuse of an idempotency key for a different request
-- persistence of idempotency records for deposits, withdrawals and transfers
-- controller handling of idempotency conflicts
-- rejection of invalid idempotency keys
-
-Run all automated tests with:
-
-```powershell
-.\gradlew.bat test --rerun-tasks
-```
-
-After the test run, the HTML test report can be opened with:
-
-```powershell
-start build/reports/tests/test/index.html
-```
-
-The report shows the total number of executed tests, failures and skipped tests.
-
-## Project Structure
-
-```text
-Controller
-    ↓
-Service
-    ↓
-Repository
-    ↓
-H2
-```
-
-The project separates API handling, business logic and persistence into dedicated layers.
+[GitHub profile](https://github.com/erduan-ramadani)
