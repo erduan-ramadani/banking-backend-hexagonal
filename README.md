@@ -30,8 +30,8 @@ connected through interfaces (ports). The application does not need to know how 
 
 | Area         | Technology                               |
 |--------------|------------------------------------------|
-| Language     | Java                                     |
-| Framework    | Spring Boot                              |
+| Language     | Java 21                                  |
+| Framework    | Spring Boot 4.1.1                        |
 | API          | REST / JSON                              |
 | Persistence  | Spring Data JPA / Hibernate              |
 | Database     | H2                                       |
@@ -63,37 +63,6 @@ com.eddiapps.banking
 └── repository                # Spring Data repositories
 ```
 
-## Example: Deposit flow
-
-```mermaid
-sequenceDiagram
-    actor Client
-    participant API as REST Controller
-    participant Service as Deposit Application Service
-    participant Idem as Idempotency Port
-    participant Accounts as Account Ports
-    participant Domain as Account Domain Model
-    participant Tx as Transaction Port
-    Client ->> API: Deposit request + Idempotency-Key
-    API ->> Service: deposit(key, accountNumber, amount)
-    Service ->> Idem: Check key and request fingerprint
-    alt Previously processed identical request
-        Idem -->> Service: Stored result
-        Service -->> API: Previous result
-    else New request
-        Service ->> Accounts: Find account by number
-        Accounts -->> Service: Existing account or empty
-        Note over Service, Domain: Create account if absent
-        Service ->> Domain: deposit(amount)
-        Domain -->> Service: Updated balance
-        Service ->> Accounts: Save account
-        Service ->> Tx: Record deposit
-        Service ->> Idem: Store idempotency result
-        Service -->> API: Updated account
-    end
-    API -->> Client: HTTP response
-```
-
 ## Business rules
 
 | Operation         | Important constraints                                                                           |
@@ -117,7 +86,7 @@ The API maps domain and application errors to HTTP responses, including:
 
 ## Running locally
 
-**Prerequisites:** A compatible JDK and Maven installation.
+**Prerequisites:** JDK 21. The project uses **Gradle**; use the included Gradle Wrapper if available.
 
 1. Clone the repository:
 
@@ -126,26 +95,42 @@ The API maps domain and application errors to HTTP responses, including:
    cd banking-backend-hexagonal
    ```
 
-2. Start the Spring Boot application using your project's Maven wrapper, if present:
+2. Start the Spring Boot application:
 
-   ```bash
-   ./mvnw spring-boot:run
+   **Windows (PowerShell):**
+
+   ```powershell
+   .\gradlew.bat bootRun
    ```
 
-   On Windows, use `mvnw.cmd spring-boot:run`. If the repository does not include a wrapper, use `mvn spring-boot:run`.
+   **macOS / Linux:**
 
-3. The application is configured to run locally at `http://localhost:8080` in the development setup.
+   ```bash
+   ./gradlew bootRun
+   ```
 
-### Run tests
+   The default Spring Boot port is `8080`, unless overridden in application configuration.
 
-```bash
-./mvnw test
+### Build and run tests
+
+**Windows (PowerShell):**
+
+```powershell
+.\gradlew.bat build
+.\gradlew.bat test
 ```
 
-Or run individual test classes directly from IntelliJ IDEA.
+**macOS / Linux:**
 
-> **Note:** The sample commands assume the Maven setup used in the project. Check the repository's build files and
-> configuration for the exact JDK version and any environment-specific settings.
+```bash
+./gradlew build
+./gradlew test
+```
+
+You can also run individual test classes directly from IntelliJ IDEA.
+
+> **Note:** These commands assume the Gradle Wrapper (`gradlew` / `gradlew.bat`) is included in the repository. Database
+> configuration and runtime settings depend on the project's `application.properties` or `application.yml`.
 
 ## Why Hexagonal Architecture?
 
