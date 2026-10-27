@@ -1,36 +1,19 @@
 # Banking Backend — Hexagonal Architecture
 
-A Java and Spring Boot REST API for essential banking operations, built using **Hexagonal Architecture (Ports & Adapters)**.
+A Java and Spring Boot REST API for essential banking operations, built using **Hexagonal Architecture (Ports &
+Adapters)**.
 
-This project is the architectural evolution of my [Layered Architecture implementation](https://github.com/erduan-ramadani/banking-backend-layered). Both versions implement the same banking domain, making it easier to compare a conventional layered design with an approach that separates business rules from frameworks and infrastructure.
+This project is the architectural evolution of
+my [Layered Architecture implementation](https://github.com/erduan-ramadani/banking-backend-layered). Both versions
+implement the same banking domain, making it easier to compare a conventional layered design with an approach that
+separates business rules from frameworks and infrastructure.
 
-## Architecture at a glance
+## Architecture Overview
 
-```mermaid
-flowchart LR
-    Client[REST Client]
-    Controller[REST Controller<br/>Inbound Adapter]
-    InPorts[Input Ports<br/>Use Case Interfaces]
-    Services[Application Services]
-    Domain[Domain Models<br/>Business Rules]
-    OutPorts[Output Ports<br/>Persistence Interfaces]
-    Adapter[Persistence Adapters]
-    JPA[Spring Data JPA<br/>Repositories & Entities]
-    DB[(H2 Database)]
+![Hexagonal Architecture](docs/architecture.png)
 
-    Client --> Controller --> InPorts --> Services
-    Services --> Domain
-    Services --> OutPorts
-    Adapter -. implements .-> OutPorts
-    Adapter --> JPA --> DB
-
-    classDef core fill:#e8f2ff,stroke:#2563eb,color:#102a43
-    classDef edge fill:#f2f4f7,stroke:#667085,color:#101828
-    class InPorts,Services,Domain,OutPorts core
-    class Client,Controller,Adapter,JPA,DB edge
-```
-
-**Key idea:** Business logic lives in the domain and application layers. REST and database implementations are adapters, connected through interfaces (ports). The application does not need to know how data is stored.
+**Key idea:** Business logic lives in the domain and application layers. REST and database implementations are adapters,
+connected through interfaces (ports). The application does not need to know how data is stored.
 
 ## Features
 
@@ -45,15 +28,15 @@ flowchart LR
 
 ## Technology stack
 
-| Area | Technology |
-| --- | --- |
-| Language | Java |
-| Framework | Spring Boot |
-| API | REST / JSON |
-| Persistence | Spring Data JPA / Hibernate |
-| Database | H2 |
-| Build | Maven |
-| Tests | JUnit 5, Mockito |
+| Area         | Technology                               |
+|--------------|------------------------------------------|
+| Language     | Java                                     |
+| Framework    | Spring Boot                              |
+| API          | REST / JSON                              |
+| Persistence  | Spring Data JPA / Hibernate              |
+| Database     | H2                                       |
+| Build        | Gradle                                   |
+| Tests        | JUnit 5, Mockito                         |
 | Architecture | Hexagonal Architecture, Ports & Adapters |
 
 ## Project structure
@@ -91,47 +74,46 @@ sequenceDiagram
     participant Accounts as Account Ports
     participant Domain as Account Domain Model
     participant Tx as Transaction Port
-
-    Client->>API: Deposit request + Idempotency-Key
-    API->>Service: deposit(key, accountNumber, amount)
-    Service->>Idem: Check key and request fingerprint
+    Client ->> API: Deposit request + Idempotency-Key
+    API ->> Service: deposit(key, accountNumber, amount)
+    Service ->> Idem: Check key and request fingerprint
     alt Previously processed identical request
-        Idem-->>Service: Stored result
-        Service-->>API: Previous result
+        Idem -->> Service: Stored result
+        Service -->> API: Previous result
     else New request
-        Service->>Accounts: Find account by number
-        Accounts-->>Service: Existing account or empty
-        Note over Service,Domain: Create account if absent
-        Service->>Domain: deposit(amount)
-        Domain-->>Service: Updated balance
-        Service->>Accounts: Save account
-        Service->>Tx: Record deposit
-        Service->>Idem: Store idempotency result
-        Service-->>API: Updated account
+        Service ->> Accounts: Find account by number
+        Accounts -->> Service: Existing account or empty
+        Note over Service, Domain: Create account if absent
+        Service ->> Domain: deposit(amount)
+        Domain -->> Service: Updated balance
+        Service ->> Accounts: Save account
+        Service ->> Tx: Record deposit
+        Service ->> Idem: Store idempotency result
+        Service -->> API: Updated account
     end
-    API-->>Client: HTTP response
+    API -->> Client: HTTP response
 ```
 
 ## Business rules
 
-| Operation | Important constraints |
-| --- | --- |
-| Deposit | Amount must be greater than zero |
-| Withdraw | Amount must be greater than zero; sufficient balance required |
-| Transfer | Different sender and recipient; both accounts must exist; sufficient funds; atomic update |
-| Idempotent write | Same key and request returns the existing result; same key with a different request is rejected |
-| Concurrent update | Stale account versions are rejected rather than silently overwriting changes |
+| Operation         | Important constraints                                                                           |
+|-------------------|-------------------------------------------------------------------------------------------------|
+| Deposit           | Amount must be greater than zero                                                                |
+| Withdraw          | Amount must be greater than zero; sufficient balance required                                   |
+| Transfer          | Different sender and recipient; both accounts must exist; sufficient funds; atomic update       |
+| Idempotent write  | Same key and request returns the existing result; same key with a different request is rejected |
+| Concurrent update | Stale account versions are rejected rather than silently overwriting changes                    |
 
 ### Error handling
 
 The API maps domain and application errors to HTTP responses, including:
 
-| Status | Example |
-| --- | --- |
-| `400 Bad Request` | Invalid amount or invalid transfer input |
-| `404 Not Found` | Requested account does not exist |
-| `409 Conflict` | Idempotency-key conflict or optimistic-locking conflict |
-| `422 Unprocessable Entity` | Insufficient funds |
+| Status                     | Example                                                 |
+|----------------------------|---------------------------------------------------------|
+| `400 Bad Request`          | Invalid amount or invalid transfer input                |
+| `404 Not Found`            | Requested account does not exist                        |
+| `409 Conflict`             | Idempotency-key conflict or optimistic-locking conflict |
+| `422 Unprocessable Entity` | Insufficient funds                                      |
 
 ## Running locally
 
@@ -162,11 +144,13 @@ The API maps domain and application errors to HTTP responses, including:
 
 Or run individual test classes directly from IntelliJ IDEA.
 
-> **Note:** The sample commands assume the Maven setup used in the project. Check the repository's build files and configuration for the exact JDK version and any environment-specific settings.
+> **Note:** The sample commands assume the Maven setup used in the project. Check the repository's build files and
+> configuration for the exact JDK version and any environment-specific settings.
 
 ## Why Hexagonal Architecture?
 
-The original implementation used a traditional flow of **Controller → Service → Repository**. The hexagonal version introduces explicit boundaries:
+The original implementation used a traditional flow of **Controller → Service → Repository**. The hexagonal version
+introduces explicit boundaries:
 
 - **Domain:** Banking rules and entities, independent of HTTP and persistence.
 - **Input ports:** Interfaces that describe what the application can do.
@@ -174,18 +158,20 @@ The original implementation used a traditional flow of **Controller → Service 
 - **Output ports:** Interfaces for capabilities the application needs, such as saving accounts or transactions.
 - **Adapters:** Translate between the application and external technologies such as REST and JPA.
 
-This structure improves separation of concerns and makes core behavior easier to test with mocked ports. It also creates flexibility to replace infrastructure implementations without rewriting the business rules.
+This structure improves separation of concerns and makes core behavior easier to test with mocked ports. It also creates
+flexibility to replace infrastructure implementations without rewriting the business rules.
 
 ## Compare both implementations
 
-| | Layered | Hexagonal |
-| --- | --- | --- |
-| Main organization | Technical layers | Domain, use cases, ports, adapters |
-| Typical flow | Controller → Service → Repository | Inbound adapter → input port → application service → output port → outbound adapter |
-| Persistence boundary | Service commonly depends on repository | Application depends on a persistence port |
-| Main learning focus | Straightforward Spring Boot application structure | Dependency inversion and explicit architectural boundaries |
+|                      | Layered                                           | Hexagonal                                                                           |
+|----------------------|---------------------------------------------------|-------------------------------------------------------------------------------------|
+| Main organization    | Technical layers                                  | Domain, use cases, ports, adapters                                                  |
+| Typical flow         | Controller → Service → Repository                 | Inbound adapter → input port → application service → output port → outbound adapter |
+| Persistence boundary | Service commonly depends on repository            | Application depends on a persistence port                                           |
+| Main learning focus  | Straightforward Spring Boot application structure | Dependency inversion and explicit architectural boundaries                          |
 
-**Repositories:** [Layered version](https://github.com/erduan-ramadani/banking-backend-layered) · [Hexagonal version](https://github.com/erduan-ramadani/banking-backend-hexagonal)
+**Repositories:
+** [Layered version](https://github.com/erduan-ramadani/banking-backend-layered) · [Hexagonal version](https://github.com/erduan-ramadani/banking-backend-hexagonal)
 
 ## Author
 
